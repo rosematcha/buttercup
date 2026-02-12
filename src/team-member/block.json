@@ -1,0 +1,62 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "buttercup/team-member",
+    "version": "1.0.0",
+    "title": "Team Member",
+    "category": "widgets",
+    "icon": "admin-users",
+    "description": "An individual team member card.",
+    "supports": {
+        "html": false,
+        "inserter": false
+    },
+    "parent": [
+        "buttercup/team"
+    ],
+    "textdomain": "buttercup",
+    "editorScript": "file:./index.js",
+    "editorStyle": "file:./index.css",
+    "style": "file:./style-index.css",
+    "viewScript": "file:./view.js",
+    "usesContext": [
+        "buttercup/imageShape",
+        "buttercup/imageSize",
+        "buttercup/textAlign",
+        "buttercup/showBio",
+        "buttercup/showSocial"
+    ],
+    "attributes": {
+        "name": {
+            "type": "string",
+            "default": ""
+        },
+        "pronouns": {
+            "type": "string",
+            "default": ""
+        },
+        "position": {
+            "type": "string",
+            "default": ""
+        },
+        "bio": {
+            "type": "string",
+            "default": ""
+        },
+        "profileImageId": {
+            "type": "number",
+            "default": 0
+        },
+        "profileImageUrl": {
+            "type": "string",
+            "default": ""
+        },
+        "socialLinks": {
+            "type": "array",
+            "default": [],
+            "items": {
+                "type": "object"
+            }
+        }
+    }
+}

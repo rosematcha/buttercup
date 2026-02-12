@@ -1,0 +1,149 @@
+/* ── Team Member Card ── */
+.buttercup-team-member {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+}
+
+/* ── Image ── */
+.buttercup-team-member__image-wrap {
+    width: 120px;
+    height: 120px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.buttercup-team-member__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Shape variants — applied via parent class */
+.buttercup-team--circle .buttercup-team-member__image-wrap {
+    border-radius: 50%;
+}
+
+.buttercup-team--square .buttercup-team-member__image-wrap {
+    border-radius: 0;
+}
+
+.buttercup-team--squircle .buttercup-team-member__image-wrap {
+    border-radius: 22%;
+}
+
+/* ── Text ── */
+.buttercup-team-member__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+}
+
+.buttercup-team-member__name {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #1a1a1a;
+}
+
+.buttercup-team-member__subtitle {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #555;
+    line-height: 1.3;
+}
+
+.buttercup-team-member__pronouns {
+    font-style: italic;
+}
+
+.buttercup-team-member__sep {
+    margin: 0 2px;
+}
+
+.buttercup-team-member__position {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #555;
+    line-height: 1.3;
+}
+
+/* ── Bio (3-line clamp) ── */
+.buttercup-team-member__bio-wrap {
+    margin-top: 4px;
+}
+
+.buttercup-team-member__bio {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: #333;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.buttercup-team-member__bio-wrap.is-expanded .buttercup-team-member__bio {
+    -webkit-line-clamp: unset;
+    display: block;
+}
+
+.buttercup-team-member__bio-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-top: 2px;
+    font-size: 0.85rem;
+    color: #0073aa;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:hover,
+    &:focus {
+        color: #005177;
+        outline: 2px solid #005177;
+        outline-offset: 2px;
+    }
+}
+
+/* ── Social Links ── */
+.buttercup-team-member__social {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 4px;
+
+    a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #f0f0f0;
+        color: #444;
+        text-decoration: none;
+        font-size: 18px;
+        transition: background 0.15s, color 0.15s;
+
+        &:hover,
+        &:focus {
+            background: #0073aa;
+            color: #fff;
+            outline: 2px solid #005177;
+            outline-offset: 2px;
+        }
+    }
+}

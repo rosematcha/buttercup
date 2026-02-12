@@ -1,0 +1,17 @@
+# Node
+node_modules/
+npm-debug.log
+
+# Mac
+.DS_Store
+
+# Build
+build/
+*.tsbuildinfo
+
+# Editor
+.vscode/
+.idea/
+
+# Builds
+buttercup.zip

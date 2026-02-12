@@ -1,0 +1,57 @@
+.buttercup-team {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: var(--buttercup-col-gap, 32px);
+    row-gap: var(--buttercup-row-gap, 40px);
+    padding: 16px 0;
+
+    >* {
+        flex: 1 1 var(--buttercup-min-card, 200px);
+        min-width: var(--buttercup-min-card, 200px);
+        max-width: 100%;
+    }
+
+    /* ── Image size variants ── */
+    &--img-small .buttercup-team-member__image-wrap {
+        width: 80px;
+        height: 80px;
+    }
+
+    &--img-medium .buttercup-team-member__image-wrap {
+        width: 120px;
+        height: 120px;
+    }
+
+    &--img-large .buttercup-team-member__image-wrap {
+        width: 180px;
+        height: 180px;
+    }
+
+    /* ── Text alignment ── */
+    &--align-center .buttercup-team-member {
+        text-align: center;
+        align-items: center;
+    }
+
+    &--align-left .buttercup-team-member {
+        text-align: left;
+        align-items: flex-start;
+    }
+
+    &--align-center .buttercup-team-member__social {
+        justify-content: center;
+    }
+
+    &--align-left .buttercup-team-member__social {
+        justify-content: flex-start;
+    }
+
+    /* ── Show/hide ── */
+    &--hide-bio .buttercup-team-member__bio-wrap {
+        display: none;
+    }
+
+    &--hide-social .buttercup-team-member__social {
+        display: none;
+    }
+}

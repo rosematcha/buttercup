@@ -1,0 +1,61 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "buttercup/team",
+    "version": "1.0.0",
+    "title": "Buttercup Teams",
+    "category": "widgets",
+    "icon": "groups",
+    "description": "Display a grid of team members.",
+    "supports": {
+        "html": false,
+        "align": [
+            "wide",
+            "full"
+        ]
+    },
+    "textdomain": "buttercup",
+    "editorScript": "file:./index.js",
+    "editorStyle": "file:./index.css",
+    "style": "file:./style-index.css",
+    "attributes": {
+        "imageShape": {
+            "type": "string",
+            "default": "circle"
+        },
+        "imageSize": {
+            "type": "number",
+            "default": 120
+        },
+        "minCardWidth": {
+            "type": "number",
+            "default": 200
+        },
+        "columnGap": {
+            "type": "number",
+            "default": 32
+        },
+        "rowGap": {
+            "type": "number",
+            "default": 40
+        },
+        "textAlign": {
+            "type": "string",
+            "default": "center"
+        },
+        "showBio": {
+            "type": "boolean",
+            "default": true
+        },
+        "showSocial": {
+            "type": "boolean",
+            "default": true
+        }
+    },
+    "providesContext": {
+        "buttercup/imageShape": "imageShape",
+        "buttercup/textAlign": "textAlign",
+        "buttercup/showBio": "showBio",
+        "buttercup/showSocial": "showSocial"
+    }
+}

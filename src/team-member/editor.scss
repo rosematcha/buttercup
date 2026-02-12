@@ -1,0 +1,34 @@
+/* Editor-only adjustments for team member cards */
+.wp-block-buttercup-team-member {
+    .buttercup-team-member__image-wrap--circle {
+        border-radius: 50%;
+    }
+
+    .buttercup-team-member__image-wrap--square {
+        border-radius: 0;
+    }
+
+    .buttercup-team-member__image-wrap--squircle {
+        border-radius: 22%;
+    }
+
+    .buttercup-team-member__image-wrap {
+        position: relative;
+        cursor: pointer;
+        transition: opacity 0.15s;
+
+        &:hover {
+            opacity: 0.85;
+        }
+
+        &:focus {
+            outline: 2px solid var(--wp-admin-theme-color, #007cba);
+            outline-offset: 2px;
+        }
+    }
+
+    .buttercup-team-member__image-placeholder-label {
+        font-size: 14px;
+        color: #757575;
+    }
+}
