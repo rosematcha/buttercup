@@ -22,11 +22,11 @@
     "attributes": {
         "imageShape": {
             "type": "string",
-            "default": "circle"
+            "default": "squircle"
         },
         "imageSize": {
             "type": "number",
-            "default": 400
+            "default": 192
         },
         "squircleRadius": {
             "type": "number",
@@ -50,19 +50,19 @@
         },
         "cardHoverEffect": {
             "type": "string",
-            "default": "none"
+            "default": "lift"
         },
         "minCardWidth": {
             "type": "number",
-            "default": 200
+            "default": 230
         },
         "columnGap": {
             "type": "number",
-            "default": 32
+            "default": 40
         },
         "rowGap": {
             "type": "number",
-            "default": 40
+            "default": 20
         },
         "bioLines": {
             "type": "number",
@@ -86,17 +86,19 @@
         },
         "showBio": {
             "type": "boolean",
-            "default": true
+            "default": false
         },
         "showSocial": {
             "type": "boolean",
             "default": true
         },
         "showSocialGrid": {
-            "type": "boolean"
+            "type": "boolean",
+            "default": false
         },
         "showSocialMemberPage": {
-            "type": "boolean"
+            "type": "boolean",
+            "default": true
         },
         "enableMemberPages": {
             "type": "boolean",
