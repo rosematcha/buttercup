@@ -1,15 +1,13 @@
 .wp-block-buttercup-team {
     >.block-editor-inner-blocks>.block-editor-block-list__layout {
-        display: flex;
-        flex-wrap: wrap;
-        column-gap: var(--buttercup-col-gap, 32px);
-        row-gap: var(--buttercup-row-gap, 40px);
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(var(--buttercup-min-card, 200px), 1fr));
+        gap: var(--buttercup-row-gap, 40px) var(--buttercup-col-gap, 32px);
         align-items: stretch;
 
         >* {
-            flex: 1 1 var(--buttercup-min-card, 200px);
-            min-width: var(--buttercup-min-card, 200px);
-            max-width: 100%;
+            width: 100%;
+            min-width: 0;
         }
     }
 
@@ -40,7 +38,7 @@
 }
 
 /* ── Add Member button ── */
-.wp-block-buttercup-team > .block-editor-inner-blocks > .block-editor-block-list__layout > .block-list-appender {
+.wp-block-buttercup-team>.block-editor-inner-blocks>.block-editor-block-list__layout>.block-list-appender {
     flex: 1 1 var(--buttercup-min-card, 200px);
     min-width: var(--buttercup-min-card, 200px);
     max-width: 100%;

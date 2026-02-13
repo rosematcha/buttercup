@@ -9,6 +9,7 @@
     background: var(--buttercup-card-bg, transparent);
     border-radius: var(--buttercup-card-radius, 0);
     padding: var(--buttercup-card-padding, 0);
+    height: 100%;
 }
 
 /* ── Image ── */
@@ -288,6 +289,7 @@
     .buttercup-team-member-page__layout {
         grid-template-columns: 1fr;
     }
+
     .buttercup-team-member-page {
         padding: 28px 16px;
     }
@@ -340,8 +342,7 @@
 }
 
 .buttercup-team--hover-glow .buttercup-team-member:hover,
-.buttercup-team--hover-glow .buttercup-team-member:focus-within {
-}
+.buttercup-team--hover-glow .buttercup-team-member:focus-within {}
 
 .buttercup-team--hover-glow .buttercup-team-member:hover .buttercup-team-member__image-wrap,
 .buttercup-team--hover-glow .buttercup-team-member:focus-within .buttercup-team-member__image-wrap {
@@ -379,8 +380,7 @@
 }
 
 .buttercup-team--hover-outline .buttercup-team-member:hover,
-.buttercup-team--hover-outline .buttercup-team-member:focus-within {
-}
+.buttercup-team--hover-outline .buttercup-team-member:focus-within {}
 
 .buttercup-team--hover-outline .buttercup-team-member:hover .buttercup-team-member__image-wrap,
 .buttercup-team--hover-outline .buttercup-team-member:focus-within .buttercup-team-member__image-wrap {
@@ -388,6 +388,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
     .buttercup-team--hover-lift .buttercup-team-member,
     .buttercup-team--hover-glow .buttercup-team-member,
     .buttercup-team--hover-lift-glow .buttercup-team-member,
@@ -397,6 +398,7 @@
         transition: none;
         transform: none;
     }
+
     .buttercup-team--hover-lift .buttercup-team-member__image-wrap,
     .buttercup-team--hover-glow .buttercup-team-member__image-wrap,
     .buttercup-team--hover-lift-glow .buttercup-team-member__image-wrap,
@@ -406,6 +408,7 @@
         transition: none;
         box-shadow: none;
     }
+
     .buttercup-team--hover-lift .buttercup-team-member:hover,
     .buttercup-team--hover-lift .buttercup-team-member:focus-within,
     .buttercup-team--hover-glow .buttercup-team-member:hover,

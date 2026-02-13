@@ -1,14 +1,12 @@
 .buttercup-team {
-    display: flex;
-    flex-wrap: wrap;
-    column-gap: var(--buttercup-col-gap, 32px);
-    row-gap: var(--buttercup-row-gap, 40px);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--buttercup-min-card, 200px), 1fr));
+    gap: var(--buttercup-row-gap, 40px) var(--buttercup-col-gap, 32px);
     padding: 16px 0;
 
     >* {
-        flex: 1 1 var(--buttercup-min-card, 200px);
-        min-width: var(--buttercup-min-card, 200px);
-        max-width: 100%;
+        width: 100%;
+        min-width: 0;
     }
 
     /* ── Text alignment ── */
