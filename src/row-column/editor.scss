@@ -1,0 +1,38 @@
+// Row Column — Editor Styles
+
+.buttercup-row-column {
+    min-height: 48px;
+    outline: 1px dashed transparent;
+    transition: outline-color 0.15s ease;
+
+    &.is-selected,
+    &.has-child-selected {
+        outline-color: rgba(0, 124, 186, 0.3);
+    }
+
+    > .block-editor-inner-blocks {
+        width: 100%;
+    }
+
+    // Visibility hint in editor
+    &.buttercup-hide-desktop,
+    &.buttercup-hide-tablet,
+    &.buttercup-hide-mobile {
+        opacity: 0.4;
+        position: relative;
+
+        &::after {
+            content: "Hidden";
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 3px;
+            z-index: 10;
+            pointer-events: none;
+        }
+    }
+}

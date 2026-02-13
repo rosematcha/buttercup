@@ -1,0 +1,79 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "buttercup/row-column",
+    "version": "1.0.0",
+    "title": "Row Column",
+    "category": "design",
+    "icon": "align-center",
+    "description": "An individual column within a Row Layout block.",
+    "supports": {
+        "html": false,
+        "inserter": false
+    },
+    "parent": [
+        "buttercup/row-layout"
+    ],
+    "textdomain": "buttercup",
+    "editorScript": "file:./index.js",
+    "editorStyle": "file:./index.css",
+    "style": "file:./style-index.css",
+    "usesContext": [
+        "buttercup/rowColumns",
+        "buttercup/rowVerticalAlignment"
+    ],
+    "attributes": {
+        "desktopOrder": {
+            "type": "number",
+            "default": 0
+        },
+        "tabletOrder": {
+            "type": "number",
+            "default": 0
+        },
+        "mobileOrder": {
+            "type": "number",
+            "default": 0
+        },
+        "verticalAlignment": {
+            "type": "string",
+            "default": "inherit"
+        },
+        "paddingTop": {
+            "type": "number",
+            "default": 0
+        },
+        "paddingRight": {
+            "type": "number",
+            "default": 0
+        },
+        "paddingBottom": {
+            "type": "number",
+            "default": 0
+        },
+        "paddingLeft": {
+            "type": "number",
+            "default": 0
+        },
+        "backgroundColor": {
+            "type": "string",
+            "default": ""
+        },
+        "borderRadius": {
+            "type": "number",
+            "default": 0
+        },
+        "hideOnDesktop": {
+            "type": "boolean",
+            "default": false
+        },
+        "hideOnTablet": {
+            "type": "boolean",
+            "default": false
+        },
+        "hideOnMobile": {
+            "type": "boolean",
+            "default": false
+        }
+    }
+}

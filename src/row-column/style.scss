@@ -1,0 +1,12 @@
+// Row Column — Frontend Styles
+
+.buttercup-row-column {
+    box-sizing: border-box;
+    position: relative;
+
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+}

@@ -1,0 +1,195 @@
+// Row Layout — Frontend Styles
+
+.buttercup-row-layout {
+    position: relative;
+    box-sizing: border-box;
+
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+
+    // Background image
+    background-size: var(--rl-bg-size, cover);
+    background-position: var(--rl-bg-position, center center);
+    background-repeat: var(--rl-bg-repeat, no-repeat);
+
+    // Parallax
+    &.has-parallax {
+        background-attachment: fixed;
+
+        @supports (-webkit-touch-callout: inherit) {
+            background-attachment: scroll;
+        }
+    }
+}
+
+// Video background
+.buttercup-row-layout__video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    pointer-events: none;
+}
+
+// Overlay
+.buttercup-row-layout__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+// Inner flex container
+.buttercup-row-layout__inner {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+// Column ordering via CSS custom properties
+.buttercup-row-column {
+    box-sizing: border-box;
+    order: var(--rc-desktop-order, 0);
+}
+
+// Responsive: Tablet (max-width: 1024px)
+@media (max-width: 1024px) {
+    .buttercup-row-layout.is-tablet-collapse {
+        .buttercup-row-layout__inner {
+            flex-direction: column;
+        }
+
+        .buttercup-row-column {
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+        }
+    }
+
+    .buttercup-row-layout.is-tablet-reverse {
+        .buttercup-row-layout__inner {
+            flex-direction: row-reverse;
+        }
+    }
+
+    .buttercup-row-layout.is-tablet-collapse.is-tablet-reverse {
+        .buttercup-row-layout__inner {
+            flex-direction: column-reverse;
+        }
+    }
+
+    .buttercup-row-column {
+        order: var(--rc-tablet-order, var(--rc-desktop-order, 0));
+    }
+}
+
+// Responsive: Mobile (max-width: 767px)
+@media (max-width: 767px) {
+    .buttercup-row-layout.is-mobile-collapse {
+        .buttercup-row-layout__inner {
+            flex-direction: column;
+        }
+
+        .buttercup-row-column {
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+        }
+    }
+
+    .buttercup-row-layout.is-mobile-reverse {
+        .buttercup-row-layout__inner {
+            flex-direction: row-reverse;
+        }
+    }
+
+    .buttercup-row-layout.is-mobile-collapse.is-mobile-reverse {
+        .buttercup-row-layout__inner {
+            flex-direction: column-reverse;
+        }
+    }
+
+    .buttercup-row-column {
+        order: var(--rc-mobile-order, var(--rc-tablet-order, var(--rc-desktop-order, 0)));
+    }
+}
+
+// Vertical alignment classes
+.buttercup-row-layout__inner {
+    &.is-aligned-top {
+        align-items: flex-start;
+    }
+
+    &.is-aligned-center {
+        align-items: center;
+    }
+
+    &.is-aligned-bottom {
+        align-items: flex-end;
+    }
+
+    &.is-aligned-stretch {
+        align-items: stretch;
+    }
+}
+
+// Column vertical alignment override
+.buttercup-row-column {
+    &.is-vertically-aligned-top {
+        align-self: flex-start;
+    }
+
+    &.is-vertically-aligned-center {
+        align-self: center;
+    }
+
+    &.is-vertically-aligned-bottom {
+        align-self: flex-end;
+    }
+
+    &.is-vertically-aligned-stretch {
+        align-self: stretch;
+    }
+}
+
+// Visibility classes
+@media (min-width: 1025px) {
+    .buttercup-hide-desktop {
+        display: none !important;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+    .buttercup-hide-tablet {
+        display: none !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .buttercup-hide-mobile {
+        display: none !important;
+    }
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+    .buttercup-row-layout {
+        &.has-parallax {
+            background-attachment: scroll;
+        }
+    }
+
+    .buttercup-row-layout__video {
+        display: none;
+    }
+}

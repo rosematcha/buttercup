@@ -1,0 +1,204 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "buttercup/row-layout",
+    "version": "1.0.0",
+    "title": "Row Layout",
+    "category": "design",
+    "icon": "columns",
+    "description": "A flexible row layout with responsive column ordering, background options, and visibility controls.",
+    "supports": {
+        "html": false,
+        "align": [
+            "wide",
+            "full"
+        ]
+    },
+    "textdomain": "buttercup",
+    "editorScript": "file:./index.js",
+    "editorStyle": "file:./index.css",
+    "style": "file:./style-index.css",
+    "attributes": {
+        "uniqueId": {
+            "type": "string",
+            "default": ""
+        },
+        "columns": {
+            "type": "number",
+            "default": 2
+        },
+        "columnLayout": {
+            "type": "string",
+            "default": "equal"
+        },
+        "columnWidths": {
+            "type": "array",
+            "default": [],
+            "items": {
+                "type": "number"
+            }
+        },
+        "columnGap": {
+            "type": "number",
+            "default": 30
+        },
+        "tabletLayout": {
+            "type": "string",
+            "default": "inherit"
+        },
+        "mobileLayout": {
+            "type": "string",
+            "default": "collapse"
+        },
+        "collapseOrder": {
+            "type": "string",
+            "default": "left-to-right"
+        },
+        "reverseOnMobile": {
+            "type": "boolean",
+            "default": false
+        },
+        "reverseOnTablet": {
+            "type": "boolean",
+            "default": false
+        },
+        "verticalAlignment": {
+            "type": "string",
+            "default": "top"
+        },
+        "maxWidth": {
+            "type": "number",
+            "default": 0
+        },
+        "maxWidthUnit": {
+            "type": "string",
+            "default": "px"
+        },
+        "inheritMaxWidth": {
+            "type": "boolean",
+            "default": true
+        },
+        "minHeight": {
+            "type": "number",
+            "default": 0
+        },
+        "minHeightUnit": {
+            "type": "string",
+            "default": "px"
+        },
+        "paddingTop": {
+            "type": "number",
+            "default": 25
+        },
+        "paddingRight": {
+            "type": "number",
+            "default": 0
+        },
+        "paddingBottom": {
+            "type": "number",
+            "default": 25
+        },
+        "paddingLeft": {
+            "type": "number",
+            "default": 0
+        },
+        "tabletPadding": {
+            "type": "array",
+            "default": [],
+            "items": {
+                "type": "number"
+            }
+        },
+        "mobilePadding": {
+            "type": "array",
+            "default": [],
+            "items": {
+                "type": "number"
+            }
+        },
+        "marginTop": {
+            "type": "number",
+            "default": 0
+        },
+        "marginBottom": {
+            "type": "number",
+            "default": 0
+        },
+        "backgroundColor": {
+            "type": "string",
+            "default": ""
+        },
+        "backgroundGradient": {
+            "type": "string",
+            "default": ""
+        },
+        "backgroundImageId": {
+            "type": "number",
+            "default": 0
+        },
+        "backgroundImageUrl": {
+            "type": "string",
+            "default": ""
+        },
+        "backgroundImageSize": {
+            "type": "string",
+            "default": "cover"
+        },
+        "backgroundImagePosition": {
+            "type": "string",
+            "default": "center center"
+        },
+        "backgroundImageRepeat": {
+            "type": "string",
+            "default": "no-repeat"
+        },
+        "backgroundImageAttachment": {
+            "type": "string",
+            "default": "scroll"
+        },
+        "hasParallax": {
+            "type": "boolean",
+            "default": false
+        },
+        "backgroundVideoUrl": {
+            "type": "string",
+            "default": ""
+        },
+        "backgroundVideoId": {
+            "type": "number",
+            "default": 0
+        },
+        "backgroundType": {
+            "type": "string",
+            "default": "none"
+        },
+        "overlayColor": {
+            "type": "string",
+            "default": ""
+        },
+        "overlayOpacity": {
+            "type": "number",
+            "default": 50
+        },
+        "overlayGradient": {
+            "type": "string",
+            "default": ""
+        },
+        "hideOnDesktop": {
+            "type": "boolean",
+            "default": false
+        },
+        "hideOnTablet": {
+            "type": "boolean",
+            "default": false
+        },
+        "hideOnMobile": {
+            "type": "boolean",
+            "default": false
+        }
+    },
+    "providesContext": {
+        "buttercup/rowColumns": "columns",
+        "buttercup/rowVerticalAlignment": "verticalAlignment"
+    }
+}

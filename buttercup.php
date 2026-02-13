@@ -116,6 +116,8 @@ function buttercup_blocks_init()
 {
     register_block_type(__DIR__ . '/build/team');
     register_block_type(__DIR__ . '/build/team-member');
+    register_block_type(__DIR__ . '/build/row-layout');
+    register_block_type(__DIR__ . '/build/row-column');
 }
 add_action('init', 'buttercup_blocks_init');
 
