@@ -4,28 +4,13 @@
         flex-wrap: wrap;
         column-gap: var(--buttercup-col-gap, 32px);
         row-gap: var(--buttercup-row-gap, 40px);
+        align-items: stretch;
 
         >* {
             flex: 1 1 var(--buttercup-min-card, 200px);
             min-width: var(--buttercup-min-card, 200px);
             max-width: 100%;
         }
-    }
-
-    /* Image size variants in editor */
-    &.buttercup-team--img-small .buttercup-team-member__image-wrap {
-        width: 80px;
-        height: 80px;
-    }
-
-    &.buttercup-team--img-medium .buttercup-team-member__image-wrap {
-        width: 120px;
-        height: 120px;
-    }
-
-    &.buttercup-team--img-large .buttercup-team-member__image-wrap {
-        width: 180px;
-        height: 180px;
     }
 
     /* Text alignment in editor */
@@ -47,12 +32,27 @@
     &.buttercup-team--hide-social .buttercup-team-member__social {
         display: none;
     }
+
+    &.buttercup-team--hide-pronouns .buttercup-team-member__pronouns,
+    &.buttercup-team--hide-pronouns .buttercup-team-member__sep {
+        display: none;
+    }
 }
 
 /* ── Add Member button ── */
+.wp-block-buttercup-team > .block-editor-inner-blocks > .block-editor-block-list__layout > .block-list-appender {
+    flex: 1 1 var(--buttercup-min-card, 200px);
+    min-width: var(--buttercup-min-card, 200px);
+    max-width: 100%;
+    margin: 0;
+    position: static;
+}
+
 .buttercup-team__add-member {
     display: flex;
     align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .buttercup-team__add-member-btn {
@@ -68,7 +68,9 @@
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s;
     width: 100%;
+    height: 100%;
     min-height: 160px;
+    box-sizing: border-box;
 
     &:hover,
     &:focus {

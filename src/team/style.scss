@@ -11,22 +11,6 @@
         max-width: 100%;
     }
 
-    /* ── Image size variants ── */
-    &--img-small .buttercup-team-member__image-wrap {
-        width: 80px;
-        height: 80px;
-    }
-
-    &--img-medium .buttercup-team-member__image-wrap {
-        width: 120px;
-        height: 120px;
-    }
-
-    &--img-large .buttercup-team-member__image-wrap {
-        width: 180px;
-        height: 180px;
-    }
-
     /* ── Text alignment ── */
     &--align-center .buttercup-team-member {
         text-align: center;

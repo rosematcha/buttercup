@@ -18,6 +18,7 @@
     "editorScript": "file:./index.js",
     "editorStyle": "file:./index.css",
     "style": "file:./style-index.css",
+    "viewScript": "file:./view.js",
     "attributes": {
         "imageShape": {
             "type": "string",
@@ -25,7 +26,31 @@
         },
         "imageSize": {
             "type": "number",
-            "default": 120
+            "default": 400
+        },
+        "squircleRadius": {
+            "type": "number",
+            "default": 22
+        },
+        "cardBackground": {
+            "type": "string",
+            "default": ""
+        },
+        "cardBorderRadius": {
+            "type": "number",
+            "default": 0
+        },
+        "cardPadding": {
+            "type": "number",
+            "default": 0
+        },
+        "cardShadow": {
+            "type": "string",
+            "default": "none"
+        },
+        "cardHoverEffect": {
+            "type": "string",
+            "default": "none"
         },
         "minCardWidth": {
             "type": "number",
@@ -39,9 +64,25 @@
             "type": "number",
             "default": 40
         },
+        "bioLines": {
+            "type": "number",
+            "default": 3
+        },
+        "readMoreLabel": {
+            "type": "string",
+            "default": ""
+        },
+        "readLessLabel": {
+            "type": "string",
+            "default": ""
+        },
         "textAlign": {
             "type": "string",
             "default": "center"
+        },
+        "showPronouns": {
+            "type": "boolean",
+            "default": true
         },
         "showBio": {
             "type": "boolean",
@@ -50,12 +91,69 @@
         "showSocial": {
             "type": "boolean",
             "default": true
+        },
+        "showSocialGrid": {
+            "type": "boolean"
+        },
+        "showSocialMemberPage": {
+            "type": "boolean"
+        },
+        "enableMemberPages": {
+            "type": "boolean",
+            "default": true
+        },
+        "memberBackLabel": {
+            "type": "string",
+            "default": ""
+        },
+        "memberPageIntro": {
+            "type": "string",
+            "default": ""
+        },
+        "memberPageCardBackground": {
+            "type": "string",
+            "default": ""
+        },
+        "memberPageCardRadius": {
+            "type": "number",
+            "default": 20
+        },
+        "memberPageCardPadding": {
+            "type": "number",
+            "default": 24
+        },
+        "memberPageCardShadow": {
+            "type": "string",
+            "default": "none"
+        },
+        "memberPageGap": {
+            "type": "number",
+            "default": 32
+        },
+        "memberPageLeftWidth": {
+            "type": "number",
+            "default": 280
+        },
+        "socialIconSize": {
+            "type": "number",
+            "default": 32
+        },
+        "socialStyle": {
+            "type": "string",
+            "default": "circle"
+        },
+        "socialLabelStyle": {
+            "type": "string",
+            "default": "icon-only"
         }
     },
     "providesContext": {
         "buttercup/imageShape": "imageShape",
+        "buttercup/imageSize": "imageSize",
         "buttercup/textAlign": "textAlign",
+        "buttercup/showPronouns": "showPronouns",
         "buttercup/showBio": "showBio",
-        "buttercup/showSocial": "showSocial"
+        "buttercup/showSocial": "showSocial",
+        "buttercup/enableMemberPages": "enableMemberPages"
     }
 }

@@ -5,12 +5,16 @@
     align-items: center;
     text-align: center;
     gap: 8px;
+    box-sizing: border-box;
+    background: var(--buttercup-card-bg, transparent);
+    border-radius: var(--buttercup-card-radius, 0);
+    padding: var(--buttercup-card-padding, 0);
 }
 
 /* ── Image ── */
 .buttercup-team-member__image-wrap {
-    width: 120px;
-    height: 120px;
+    width: var(--buttercup-img-size, 120px);
+    height: var(--buttercup-img-size, 120px);
     overflow: hidden;
     flex-shrink: 0;
     background: #eee;
@@ -22,21 +26,31 @@
 .buttercup-team-member__image {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: center;
     display: block;
 }
 
+.buttercup-team-member__image-wrap .buttercup-team-member__link {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
 /* Shape variants — applied via parent class */
-.buttercup-team--circle .buttercup-team-member__image-wrap {
+.buttercup-team--circle .buttercup-team-member__image-wrap,
+.buttercup-team-member-page--circle .buttercup-team-member__image-wrap {
     border-radius: 50%;
 }
 
-.buttercup-team--square .buttercup-team-member__image-wrap {
+.buttercup-team--square .buttercup-team-member__image-wrap,
+.buttercup-team-member-page--square .buttercup-team-member__image-wrap {
     border-radius: 0;
 }
 
-.buttercup-team--squircle .buttercup-team-member__image-wrap {
-    border-radius: 22%;
+.buttercup-team--squircle .buttercup-team-member__image-wrap,
+.buttercup-team-member-page--squircle .buttercup-team-member__image-wrap {
+    border-radius: var(--buttercup-squircle-radius, 22%);
 }
 
 /* ── Text ── */
@@ -53,6 +67,17 @@
     font-weight: 700;
     line-height: 1.2;
     color: #1a1a1a;
+}
+
+.buttercup-team-member__link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.buttercup-team-member__link:hover,
+.buttercup-team-member__link:focus {
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .buttercup-team-member__subtitle {
@@ -88,7 +113,7 @@
     line-height: 1.45;
     color: #333;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: var(--buttercup-bio-lines, 3);
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -129,21 +154,301 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 32px;
-        height: 32px;
+        width: var(--buttercup-social-size, 32px);
+        height: var(--buttercup-social-size, 32px);
         border-radius: 50%;
         background: #f0f0f0;
         color: #444;
         text-decoration: none;
-        font-size: 18px;
-        transition: background 0.15s, color 0.15s;
+        font-size: calc(var(--buttercup-social-size, 32px) * 0.6);
+        transition: background 0.15s, color 0.15s, transform 0.15s, box-shadow 0.15s;
 
         &:hover,
         &:focus {
             background: #0073aa;
             color: #fff;
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 14px rgba(15, 23, 42, 0.2);
             outline: 2px solid #005177;
             outline-offset: 2px;
         }
     }
+}
+
+/* ── Pronoun toggle ── */
+.buttercup-team--hide-pronouns .buttercup-team-member__pronouns,
+.buttercup-team--hide-pronouns .buttercup-team-member__sep {
+    display: none;
+}
+
+/* ── Member page ── */
+.buttercup-team-member-page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 16px;
+    --buttercup-member-gap: 32px;
+    --buttercup-member-left: 280px;
+    --buttercup-member-card-radius: 20px;
+    --buttercup-member-card-padding: 24px;
+    --buttercup-member-card-bg: #fff;
+}
+
+.buttercup-team-member-page__layout {
+    display: grid;
+    grid-template-columns: minmax(220px, var(--buttercup-member-left, 280px)) minmax(0, 1fr);
+    gap: var(--buttercup-member-gap, 32px);
+    align-items: start;
+}
+
+.buttercup-team-member-page__back {
+    margin-bottom: 20px;
+}
+
+.buttercup-team-member-page__back a {
+    color: #1f2937;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.buttercup-team-member-page__back a:hover,
+.buttercup-team-member-page__back a:focus {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.buttercup-team-member-page__card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: var(--buttercup-member-card-padding, 24px);
+    border-radius: var(--buttercup-member-card-radius, 20px);
+    background: var(--buttercup-member-card-bg, #fff);
+    align-self: start;
+}
+
+.buttercup-team-member-page__name {
+    margin: 0;
+    font-size: 1.7rem;
+    line-height: 1.15;
+    color: #0f172a;
+}
+
+.buttercup-team-member-page__pronouns {
+    font-style: italic;
+    color: #6b7280;
+    margin: 4px 0 0;
+}
+
+.buttercup-team-member-page__card .buttercup-team-member__position {
+    font-size: 0.95rem;
+    color: #475569;
+}
+
+.buttercup-team-member-page__contact {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.95rem;
+    color: #374151;
+}
+
+.buttercup-team-member-page__contact a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.buttercup-team-member-page__contact a:hover,
+.buttercup-team-member-page__contact a:focus {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.buttercup-team-member-page__social a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.buttercup-team-member-page__social div {
+    margin-top: 6px;
+}
+
+.buttercup-team-member-page__bio {
+    font-size: 1rem;
+    line-height: 1.75;
+    color: #1f2937;
+}
+
+.buttercup-team-member-page__intro {
+    margin-bottom: 16px;
+    color: #4b5563;
+}
+
+@media (max-width: 780px) {
+    .buttercup-team-member-page__layout {
+        grid-template-columns: 1fr;
+    }
+    .buttercup-team-member-page {
+        padding: 28px 16px;
+    }
+}
+
+/* ── Card shadows ── */
+.buttercup-team--shadow-soft .buttercup-team-member,
+.buttercup-team-member-page--shadow-soft .buttercup-team-member-page__card {
+    box-shadow: 0 6px 18px rgba(17, 24, 39, 0.08);
+}
+
+.buttercup-team--shadow-medium .buttercup-team-member,
+.buttercup-team-member-page--shadow-medium .buttercup-team-member-page__card {
+    box-shadow: 0 10px 28px rgba(17, 24, 39, 0.12);
+}
+
+.buttercup-team--shadow-strong .buttercup-team-member,
+.buttercup-team-member-page--shadow-strong .buttercup-team-member-page__card {
+    box-shadow: 0 16px 36px rgba(17, 24, 39, 0.18);
+}
+
+/* ── Card hover animations ── */
+.buttercup-team--hover-lift .buttercup-team-member,
+.buttercup-team--hover-glow .buttercup-team-member,
+.buttercup-team--hover-lift-glow .buttercup-team-member,
+.buttercup-team--hover-scale .buttercup-team-member,
+.buttercup-team--hover-tilt .buttercup-team-member,
+.buttercup-team--hover-outline .buttercup-team-member {
+    transition: transform 0.18s ease;
+    will-change: transform;
+}
+
+.buttercup-team--hover-lift .buttercup-team-member__image-wrap,
+.buttercup-team--hover-glow .buttercup-team-member__image-wrap,
+.buttercup-team--hover-lift-glow .buttercup-team-member__image-wrap,
+.buttercup-team--hover-scale .buttercup-team-member__image-wrap,
+.buttercup-team--hover-tilt .buttercup-team-member__image-wrap,
+.buttercup-team--hover-outline .buttercup-team-member__image-wrap {
+    transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.buttercup-team--hover-lift .buttercup-team-member:hover,
+.buttercup-team--hover-lift .buttercup-team-member:focus-within {
+    transform: translateY(-6px);
+}
+
+.buttercup-team--hover-lift .buttercup-team-member:hover .buttercup-team-member__image-wrap,
+.buttercup-team--hover-lift .buttercup-team-member:focus-within .buttercup-team-member__image-wrap {
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
+}
+
+.buttercup-team--hover-glow .buttercup-team-member:hover,
+.buttercup-team--hover-glow .buttercup-team-member:focus-within {
+}
+
+.buttercup-team--hover-glow .buttercup-team-member:hover .buttercup-team-member__image-wrap,
+.buttercup-team--hover-glow .buttercup-team-member:focus-within .buttercup-team-member__image-wrap {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2), 0 12px 24px rgba(59, 130, 246, 0.22);
+}
+
+.buttercup-team--hover-lift-glow .buttercup-team-member:hover,
+.buttercup-team--hover-lift-glow .buttercup-team-member:focus-within {
+    transform: translateY(-6px);
+}
+
+.buttercup-team--hover-lift-glow .buttercup-team-member:hover .buttercup-team-member__image-wrap,
+.buttercup-team--hover-lift-glow .buttercup-team-member:focus-within .buttercup-team-member__image-wrap {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2), 0 16px 32px rgba(59, 130, 246, 0.24);
+}
+
+.buttercup-team--hover-scale .buttercup-team-member:hover,
+.buttercup-team--hover-scale .buttercup-team-member:focus-within {
+    transform: scale(1.02);
+}
+
+.buttercup-team--hover-scale .buttercup-team-member:hover .buttercup-team-member__image-wrap,
+.buttercup-team--hover-scale .buttercup-team-member:focus-within .buttercup-team-member__image-wrap {
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+}
+
+.buttercup-team--hover-tilt .buttercup-team-member:hover,
+.buttercup-team--hover-tilt .buttercup-team-member:focus-within {
+    transform: translateY(-4px) rotate(-1deg);
+}
+
+.buttercup-team--hover-tilt .buttercup-team-member:hover .buttercup-team-member__image-wrap,
+.buttercup-team--hover-tilt .buttercup-team-member:focus-within .buttercup-team-member__image-wrap {
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.16);
+}
+
+.buttercup-team--hover-outline .buttercup-team-member:hover,
+.buttercup-team--hover-outline .buttercup-team-member:focus-within {
+}
+
+.buttercup-team--hover-outline .buttercup-team-member:hover .buttercup-team-member__image-wrap,
+.buttercup-team--hover-outline .buttercup-team-member:focus-within .buttercup-team-member__image-wrap {
+    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .buttercup-team--hover-lift .buttercup-team-member,
+    .buttercup-team--hover-glow .buttercup-team-member,
+    .buttercup-team--hover-lift-glow .buttercup-team-member,
+    .buttercup-team--hover-scale .buttercup-team-member,
+    .buttercup-team--hover-tilt .buttercup-team-member,
+    .buttercup-team--hover-outline .buttercup-team-member {
+        transition: none;
+        transform: none;
+    }
+    .buttercup-team--hover-lift .buttercup-team-member__image-wrap,
+    .buttercup-team--hover-glow .buttercup-team-member__image-wrap,
+    .buttercup-team--hover-lift-glow .buttercup-team-member__image-wrap,
+    .buttercup-team--hover-scale .buttercup-team-member__image-wrap,
+    .buttercup-team--hover-tilt .buttercup-team-member__image-wrap,
+    .buttercup-team--hover-outline .buttercup-team-member__image-wrap {
+        transition: none;
+        box-shadow: none;
+    }
+    .buttercup-team--hover-lift .buttercup-team-member:hover,
+    .buttercup-team--hover-lift .buttercup-team-member:focus-within,
+    .buttercup-team--hover-glow .buttercup-team-member:hover,
+    .buttercup-team--hover-glow .buttercup-team-member:focus-within,
+    .buttercup-team--hover-lift-glow .buttercup-team-member:hover,
+    .buttercup-team--hover-lift-glow .buttercup-team-member:focus-within,
+    .buttercup-team--hover-scale .buttercup-team-member:hover,
+    .buttercup-team--hover-scale .buttercup-team-member:focus-within,
+    .buttercup-team--hover-tilt .buttercup-team-member:hover,
+    .buttercup-team--hover-tilt .buttercup-team-member:focus-within,
+    .buttercup-team--hover-outline .buttercup-team-member:hover,
+    .buttercup-team--hover-outline .buttercup-team-member:focus-within {
+        transform: none;
+    }
+}
+
+/* ── Social icon shape ── */
+.buttercup-team--social-circle .buttercup-team-member__social a {
+    border-radius: 999px;
+}
+
+.buttercup-team--social-rounded .buttercup-team-member__social a {
+    border-radius: 10px;
+}
+
+.buttercup-team--social-square .buttercup-team-member__social a {
+    border-radius: 0;
+}
+
+/* ── Social label styles ── */
+.buttercup-team--social-label-icon-text .buttercup-team-member__social a {
+    width: auto;
+    padding: 0 12px;
+    gap: 6px;
+}
+
+.buttercup-team--social-label-icon-text .buttercup-social-link__label {
+    display: inline;
+    font-size: 0.85rem;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.buttercup-team--social-label-icon-only .buttercup-social-link__label {
+    display: none;
 }

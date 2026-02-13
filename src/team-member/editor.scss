@@ -9,7 +9,7 @@
     }
 
     .buttercup-team-member__image-wrap--squircle {
-        border-radius: 22%;
+        border-radius: var(--buttercup-squircle-radius, 22%);
     }
 
     .buttercup-team-member__image-wrap {

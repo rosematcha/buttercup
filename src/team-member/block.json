@@ -23,8 +23,10 @@
         "buttercup/imageShape",
         "buttercup/imageSize",
         "buttercup/textAlign",
+        "buttercup/showPronouns",
         "buttercup/showBio",
-        "buttercup/showSocial"
+        "buttercup/showSocial",
+        "buttercup/enableMemberPages"
     ],
     "attributes": {
         "name": {
@@ -43,6 +45,38 @@
             "type": "string",
             "default": ""
         },
+        "longBio": {
+            "type": "string",
+            "default": ""
+        },
+        "showBio": {
+            "type": "boolean",
+            "default": true
+        },
+        "memberSlug": {
+            "type": "string",
+            "default": ""
+        },
+        "memberPagesEnabled": {
+            "type": "boolean",
+            "default": true
+        },
+        "disableMemberPage": {
+            "type": "boolean",
+            "default": false
+        },
+        "email": {
+            "type": "string",
+            "default": ""
+        },
+        "phone": {
+            "type": "string",
+            "default": ""
+        },
+        "location": {
+            "type": "string",
+            "default": ""
+        },
         "profileImageId": {
             "type": "number",
             "default": 0
@@ -50,6 +84,30 @@
         "profileImageUrl": {
             "type": "string",
             "default": ""
+        },
+        "profileImageSource": {
+            "type": "string",
+            "default": "auto"
+        },
+        "profileImageAlt": {
+            "type": "string",
+            "default": ""
+        },
+        "profileImageSrcSet": {
+            "type": "string",
+            "default": ""
+        },
+        "profileImageSizes": {
+            "type": "string",
+            "default": ""
+        },
+        "profileImageWidth": {
+            "type": "number",
+            "default": 0
+        },
+        "profileImageHeight": {
+            "type": "number",
+            "default": 0
         },
         "socialLinks": {
             "type": "array",
