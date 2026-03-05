@@ -1,0 +1,36 @@
+.buttercup-homepage-feed-editor {
+	border: 1px solid #dcdcdc;
+	padding: 16px;
+	border-radius: 6px;
+
+	h3,
+	h4 {
+		margin: 0 0 10px;
+	}
+
+	p {
+		margin-top: 0;
+	}
+}
+
+.buttercup-homepage-feed-editor__summary {
+	color: #555;
+	margin-bottom: 12px;
+}
+
+.buttercup-homepage-feed-editor__loading {
+	padding: 8px 0;
+}
+
+.buttercup-homepage-feed-editor__status ul {
+	margin: 0;
+	padding-left: 20px;
+}
+
+.buttercup-homepage-feed-editor__list-wrap {
+	margin-top: 14px;
+}
+
+.buttercup-homepage-feed-editor__warnings {
+	margin-bottom: 10px;
+}

@@ -112,12 +112,556 @@ function buttercup_build_srcset($candidates) {
     return implode(', ', $parts);
 }
 
+function buttercup_enable_page_tags()
+{
+    register_taxonomy_for_object_type('post_tag', 'page');
+}
+add_action('init', 'buttercup_enable_page_tags', 5);
+
+function buttercup_homepage_feed_sanitize_tag_slug($slug, $fallback)
+{
+    $clean = sanitize_title((string) $slug);
+    if ($clean === '') {
+        return $fallback;
+    }
+    return $clean;
+}
+
+function buttercup_homepage_feed_query_posts_by_tag($tag_slug)
+{
+    if ($tag_slug === '') {
+        return [];
+    }
+
+    return get_posts([
+        'post_type' => ['post', 'page'],
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+        'orderby' => 'date',
+        'order' => 'DESC',
+        'ignore_sticky_posts' => true,
+        'tax_query' => [
+            [
+                'taxonomy' => 'post_tag',
+                'field' => 'slug',
+                'terms' => [$tag_slug],
+            ],
+        ],
+    ]);
+}
+
+function buttercup_homepage_feed_collect($mast_tag_slug = 'mast', $home_tag_slug = 'home')
+{
+    $mast_tag_slug = buttercup_homepage_feed_sanitize_tag_slug($mast_tag_slug, 'mast');
+    $home_tag_slug = buttercup_homepage_feed_sanitize_tag_slug($home_tag_slug, 'home');
+
+    $mast_posts = buttercup_homepage_feed_query_posts_by_tag($mast_tag_slug);
+    $home_posts = buttercup_homepage_feed_query_posts_by_tag($home_tag_slug);
+
+    $mast_ids = array_map('intval', wp_list_pluck($mast_posts, 'ID'));
+    $home_ids = array_map('intval', wp_list_pluck($home_posts, 'ID'));
+    $dual_ids = array_values(array_intersect($mast_ids, $home_ids));
+
+    $by_id = [];
+    foreach (array_merge($mast_posts, $home_posts) as $entry) {
+        $by_id[intval($entry->ID)] = $entry;
+    }
+
+    $dual_posts = [];
+    foreach ($dual_ids as $dual_id) {
+        $dual_key = intval($dual_id);
+        if (isset($by_id[$dual_key])) {
+            $dual_posts[] = $by_id[$dual_key];
+        }
+    }
+
+    $mast_selected = !empty($mast_posts) ? $mast_posts[0] : null;
+    $exclude_ids = $dual_ids;
+    if ($mast_selected) {
+        $exclude_ids[] = intval($mast_selected->ID);
+    }
+    $exclude_ids = array_values(array_unique(array_map('intval', $exclude_ids)));
+
+    $home_filtered = [];
+    foreach ($home_posts as $home_post) {
+        if (in_array(intval($home_post->ID), $exclude_ids, true)) {
+            continue;
+        }
+        $home_filtered[] = $home_post;
+    }
+
+    $home_selected = array_slice($home_filtered, 0, 5);
+
+    return [
+        'mast_tag_slug' => $mast_tag_slug,
+        'home_tag_slug' => $home_tag_slug,
+        'mast_posts' => $mast_posts,
+        'home_posts' => $home_posts,
+        'mast_selected' => $mast_selected,
+        'home_selected' => $home_selected,
+        'dual_posts' => $dual_posts,
+        'mast_count' => count($mast_posts),
+        'home_count' => count($home_posts),
+        'mast_overflow' => count($mast_posts) > 1,
+        'home_overflow' => count($home_posts) > 5,
+    ];
+}
+
+function buttercup_homepage_feed_summarize_posts($posts)
+{
+    $summary = [];
+
+    foreach ($posts as $post) {
+        $type_obj = get_post_type_object($post->post_type);
+        $summary[] = [
+            'id' => intval($post->ID),
+            'title' => get_the_title($post),
+            'type' => $post->post_type,
+            'typeLabel' => $type_obj ? $type_obj->labels->singular_name : $post->post_type,
+            'date' => mysql_to_rfc3339($post->post_date_gmt ? $post->post_date_gmt : $post->post_date),
+            'permalink' => get_permalink($post),
+        ];
+    }
+
+    return $summary;
+}
+
+function buttercup_homepage_feed_get_attachment_data($attachment_id)
+{
+    $attachment_id = intval($attachment_id);
+    if ($attachment_id <= 0) {
+        return null;
+    }
+
+    $src = wp_get_attachment_image_src($attachment_id, 'full');
+    if (!$src || empty($src[0])) {
+        return null;
+    }
+
+    $alt = get_post_meta($attachment_id, '_wp_attachment_image_alt', true);
+
+    return [
+        'id' => $attachment_id,
+        'url' => $src[0],
+        'width' => intval($src[1]),
+        'height' => intval($src[2]),
+        'alt' => is_string($alt) ? trim($alt) : '',
+    ];
+}
+
+function buttercup_homepage_feed_get_thumbnail_pair($post_id)
+{
+    $mobile_id = intval(get_post_meta($post_id, 'buttercup_home_mobile_image_id', true));
+    $desktop_id = intval(get_post_meta($post_id, 'buttercup_home_desktop_image_id', true));
+
+    if ($mobile_id <= 0 && $desktop_id <= 0) {
+        return null;
+    }
+
+    $mobile = $mobile_id > 0 ? buttercup_homepage_feed_get_attachment_data($mobile_id) : null;
+    $desktop = $desktop_id > 0 ? buttercup_homepage_feed_get_attachment_data($desktop_id) : null;
+
+    if (!$mobile && !$desktop) {
+        return null;
+    }
+
+    if (!$mobile) {
+        $mobile = $desktop;
+    }
+    if (!$desktop) {
+        $desktop = $mobile;
+    }
+
+    return [
+        'mobile' => $mobile,
+        'desktop' => $desktop,
+    ];
+}
+
+function buttercup_homepage_feed_render_hero_item($post, $thumbnail_pair, $is_mast = false)
+{
+    if (!$thumbnail_pair) {
+        return '';
+    }
+
+    $mobile = $thumbnail_pair['mobile'] ?? null;
+    $desktop = $thumbnail_pair['desktop'] ?? null;
+
+    if ((!$mobile || empty($mobile['url'])) && (!$desktop || empty($desktop['url']))) {
+        return '';
+    }
+
+    $post_id = intval($post->ID);
+    $title = get_the_title($post);
+    $link = get_permalink($post);
+
+    $alt = '';
+    if ($mobile && !empty($mobile['alt'])) {
+        $alt = $mobile['alt'];
+    } elseif ($desktop && !empty($desktop['alt'])) {
+        $alt = $desktop['alt'];
+    } else {
+        $alt = $title;
+    }
+
+    $classes = ['buttercup-homepage-feed__item', 'buttercup-homepage-feed__item--hero'];
+    if ($is_mast) {
+        $classes[] = 'is-mast';
+    }
+
+    $mobile_url = $mobile && !empty($mobile['url']) ? $mobile['url'] : ($desktop['url'] ?? '');
+    $desktop_url = $desktop && !empty($desktop['url']) ? $desktop['url'] : $mobile_url;
+
+    $html = '<article class="' . esc_attr(implode(' ', $classes)) . '" data-post-id="' . esc_attr($post_id) . '">';
+    $html .= '<a class="buttercup-homepage-feed__hero-link" href="' . esc_url($link) . '" aria-label="' . esc_attr($title) . '">';
+    $html .= '<picture class="buttercup-homepage-feed__picture">';
+    if ($desktop_url !== '') {
+        $html .= '<source media="(min-width: 1024px)" srcset="' . esc_url($desktop_url) . '">';
+    }
+    $html .= '<img class="buttercup-homepage-feed__hero-image" loading="lazy" decoding="async" src="' . esc_url($mobile_url) . '" alt="' . esc_attr($alt) . '"';
+    if (!empty($mobile['width']) && !empty($mobile['height'])) {
+        $html .= ' width="' . esc_attr(intval($mobile['width'])) . '" height="' . esc_attr(intval($mobile['height'])) . '"';
+    }
+    $html .= '>';
+    $html .= '</picture>';
+    $html .= '</a>';
+    $html .= '</article>';
+
+    return $html;
+}
+
+function buttercup_homepage_feed_render_split_item($post, $cta_label, $is_mast = false)
+{
+    $post_id = intval($post->ID);
+    $title = get_the_title($post);
+    $link = get_permalink($post);
+    $thumb_id = get_post_thumbnail_id($post);
+    $has_image = $thumb_id ? true : false;
+
+    $classes = ['buttercup-homepage-feed__item', 'buttercup-homepage-feed__item--split'];
+    if (!$has_image) {
+        $classes[] = 'is-text-only';
+    }
+    if ($is_mast) {
+        $classes[] = 'is-mast';
+    }
+
+    $html = '<article class="' . esc_attr(implode(' ', $classes)) . '" data-post-id="' . esc_attr($post_id) . '">';
+    if ($has_image) {
+        $html .= '<div class="buttercup-homepage-feed__split-media">';
+        $html .= '<a class="buttercup-homepage-feed__split-image-link" href="' . esc_url($link) . '" aria-label="' . esc_attr($title) . '">';
+        $html .= get_the_post_thumbnail($post, 'large', [
+            'class' => 'buttercup-homepage-feed__split-image',
+            'loading' => 'lazy',
+            'decoding' => 'async',
+        ]);
+        $html .= '</a>';
+        $html .= '</div>';
+    }
+    $html .= '<div class="buttercup-homepage-feed__split-content">';
+    $html .= '<h2 class="buttercup-homepage-feed__title"><a href="' . esc_url($link) . '">' . esc_html($title) . '</a></h2>';
+    $html .= '<a class="buttercup-homepage-feed__button" href="' . esc_url($link) . '">' . esc_html($cta_label) . '</a>';
+    $html .= '</div>';
+    $html .= '</article>';
+
+    return $html;
+}
+
+function buttercup_homepage_feed_render_item($post, $cta_label, $is_mast = false)
+{
+    $thumbnail_pair = buttercup_homepage_feed_get_thumbnail_pair($post->ID);
+    if ($thumbnail_pair) {
+        $hero_html = buttercup_homepage_feed_render_hero_item($post, $thumbnail_pair, $is_mast);
+        if ($hero_html !== '') {
+            return $hero_html;
+        }
+    }
+
+    return buttercup_homepage_feed_render_split_item($post, $cta_label, $is_mast);
+}
+
+function buttercup_render_homepage_feed($attributes)
+{
+    $cta_label = isset($attributes['ctaLabel']) ? trim((string) $attributes['ctaLabel']) : '';
+    if ($cta_label === '') {
+        $cta_label = __('Read More', 'buttercup');
+    }
+
+    $mast_tag_slug = isset($attributes['mastTagSlug']) ? $attributes['mastTagSlug'] : 'mast';
+    $home_tag_slug = isset($attributes['homeTagSlug']) ? $attributes['homeTagSlug'] : 'home';
+
+    $feed = buttercup_homepage_feed_collect($mast_tag_slug, $home_tag_slug);
+    $mast_post = $feed['mast_selected'];
+    $home_posts = $feed['home_selected'];
+
+    if (!$mast_post && empty($home_posts)) {
+        return '';
+    }
+
+    $classes = ['wp-block-buttercup-homepage-feed', 'buttercup-homepage-feed'];
+    $html = '<section class="' . esc_attr(implode(' ', $classes)) . '">';
+
+    if ($mast_post) {
+        $html .= buttercup_homepage_feed_render_item($mast_post, $cta_label, true);
+    }
+
+    foreach ($home_posts as $home_post) {
+        $html .= buttercup_homepage_feed_render_item($home_post, $cta_label, false);
+    }
+
+    $html .= '</section>';
+
+    return $html;
+}
+
+function buttercup_register_homepage_feed_meta()
+{
+    foreach (['post', 'page'] as $post_type) {
+        register_post_meta($post_type, 'buttercup_home_mobile_image_id', [
+            'type' => 'integer',
+            'single' => true,
+            'show_in_rest' => true,
+            'sanitize_callback' => 'absint',
+            'auth_callback' => function () {
+                return current_user_can('edit_posts');
+            },
+        ]);
+        register_post_meta($post_type, 'buttercup_home_desktop_image_id', [
+            'type' => 'integer',
+            'single' => true,
+            'show_in_rest' => true,
+            'sanitize_callback' => 'absint',
+            'auth_callback' => function () {
+                return current_user_can('edit_posts');
+            },
+        ]);
+    }
+}
+add_action('init', 'buttercup_register_homepage_feed_meta', 20);
+
+function buttercup_homepage_feed_image_warnings($attachment_id, $label, $target_ratio, $min_width, $min_height)
+{
+    $warnings = [];
+    $meta = wp_get_attachment_metadata($attachment_id);
+
+    if (!$meta || empty($meta['width']) || empty($meta['height'])) {
+        $warnings[] = sprintf(
+            __('Could not read dimensions for the %s image.', 'buttercup'),
+            $label
+        );
+        return $warnings;
+    }
+
+    $width = intval($meta['width']);
+    $height = intval($meta['height']);
+    if ($width < $min_width || $height < $min_height) {
+        $warnings[] = sprintf(
+            __('%1$s image is %2$dx%3$d. Suggested minimum is %4$dx%5$d.', 'buttercup'),
+            $label,
+            $width,
+            $height,
+            $min_width,
+            $min_height
+        );
+    }
+
+    $ratio = $height > 0 ? $width / $height : 0;
+    if ($ratio > 0) {
+        $diff = abs($ratio - $target_ratio) / $target_ratio;
+        if ($diff > 0.07) {
+            $warnings[] = sprintf(
+                __('%1$s image ratio is about %2$s:1. Suggested ratio is %3$s:1.', 'buttercup'),
+                $label,
+                number_format_i18n($ratio, 2),
+                number_format_i18n($target_ratio, 2)
+            );
+        }
+    }
+
+    return $warnings;
+}
+
+function buttercup_homepage_feed_render_image_field($post_id, $field_key, $field_label, $suggested_size, $target_ratio, $min_width, $min_height)
+{
+    $value = intval(get_post_meta($post_id, $field_key, true));
+    $preview = $value ? wp_get_attachment_image_src($value, 'medium') : null;
+    $warnings = $value ? buttercup_homepage_feed_image_warnings($value, $field_label, $target_ratio, $min_width, $min_height) : [];
+    $choose_label = $value ? __('Replace Image', 'buttercup') : __('Select Image', 'buttercup');
+
+    echo '<div class="buttercup-homepage-image-field"';
+    echo ' data-target-ratio="' . esc_attr($target_ratio) . '"';
+    echo ' data-min-width="' . esc_attr($min_width) . '"';
+    echo ' data-min-height="' . esc_attr($min_height) . '"';
+    echo ' data-label="' . esc_attr($field_label) . '">';
+
+    echo '<p><strong>' . esc_html($field_label) . '</strong></p>';
+    echo '<p class="description">' . esc_html($suggested_size) . '</p>';
+
+    echo '<input type="hidden" class="buttercup-homepage-image-id" name="' . esc_attr($field_key) . '" value="' . esc_attr($value) . '">';
+    echo '<div class="buttercup-homepage-image-preview">';
+    if ($preview && !empty($preview[0])) {
+        echo '<img src="' . esc_url($preview[0]) . '" alt="" style="max-width:100%;height:auto;">';
+    } else {
+        echo '<em>' . esc_html__('No image selected.', 'buttercup') . '</em>';
+    }
+    echo '</div>';
+
+    echo '<p class="buttercup-homepage-image-actions">';
+    echo '<button type="button" class="button buttercup-homepage-image-select">' . esc_html($choose_label) . '</button> ';
+    echo '<button type="button" class="button-link-delete buttercup-homepage-image-clear"';
+    if ($value <= 0) {
+        echo ' style="display:none;"';
+    }
+    echo '>' . esc_html__('Clear', 'buttercup') . '</button>';
+    echo '</p>';
+
+    echo '<div class="buttercup-homepage-image-dimensions">';
+    if (!empty($warnings)) {
+        foreach ($warnings as $warning) {
+            echo '<p class="description" style="color:#b45309;">' . esc_html($warning) . '</p>';
+        }
+    }
+    echo '</div>';
+    echo '</div>';
+}
+
+function buttercup_render_homepage_feed_meta_box($post)
+{
+    $status = buttercup_homepage_feed_collect('mast', 'home');
+    $tag_slugs = wp_get_post_terms($post->ID, 'post_tag', ['fields' => 'slugs']);
+    if (is_wp_error($tag_slugs)) {
+        $tag_slugs = [];
+    }
+
+    $has_mast = in_array('mast', $tag_slugs, true);
+    $has_home = in_array('home', $tag_slugs, true);
+
+    wp_nonce_field('buttercup_homepage_feed_meta', 'buttercup_homepage_feed_meta_nonce');
+
+    echo '<p class="description">' . esc_html__('Homepage feed rules: up to 1 "mast" item and up to 5 "home" items.', 'buttercup') . '</p>';
+
+    if ($status['mast_overflow']) {
+        echo '<div class="notice notice-warning inline"><p>' . esc_html__('More than one post/page is tagged "mast". Only the newest will render.', 'buttercup') . '</p></div>';
+    }
+    if ($status['home_overflow']) {
+        echo '<div class="notice notice-warning inline"><p>' . esc_html__('More than five posts/pages are tagged "home". Only the five newest will render.', 'buttercup') . '</p></div>';
+    }
+    if (!empty($status['dual_posts'])) {
+        echo '<div class="notice notice-warning inline"><p>' . esc_html__('Some items are tagged with both "mast" and "home". Dual-tagged items are treated as mast only.', 'buttercup') . '</p></div>';
+    }
+    if ($has_mast && $has_home) {
+        echo '<div class="notice notice-warning inline"><p>' . esc_html__('This item currently has both "mast" and "home". It will only render in the mast position.', 'buttercup') . '</p></div>';
+    }
+
+    buttercup_homepage_feed_render_image_field(
+        $post->ID,
+        'buttercup_home_mobile_image_id',
+        __('Mobile Thumbnail (5:3)', 'buttercup'),
+        __('Suggested: 2000 x 1200 (5:3)', 'buttercup'),
+        (5 / 3),
+        2000,
+        1200
+    );
+
+    echo '<hr style="margin:16px 0;">';
+
+    buttercup_homepage_feed_render_image_field(
+        $post->ID,
+        'buttercup_home_desktop_image_id',
+        __('Desktop Thumbnail (2.74:1)', 'buttercup'),
+        __('Suggested: 2880 x 1050 (2.74:1)', 'buttercup'),
+        2.74,
+        2880,
+        1050
+    );
+}
+
+function buttercup_add_homepage_feed_meta_box()
+{
+    add_meta_box(
+        'buttercup-homepage-feed-images',
+        __('Buttercup Homepage Images', 'buttercup'),
+        'buttercup_render_homepage_feed_meta_box',
+        ['post', 'page'],
+        'side'
+    );
+}
+add_action('add_meta_boxes', 'buttercup_add_homepage_feed_meta_box');
+
+function buttercup_save_homepage_feed_meta_box($post_id)
+{
+    if (wp_is_post_revision($post_id) || wp_is_post_autosave($post_id)) {
+        return;
+    }
+
+    $post_type = get_post_type($post_id);
+    if (!in_array($post_type, ['post', 'page'], true)) {
+        return;
+    }
+
+    if (!isset($_POST['buttercup_homepage_feed_meta_nonce'])) {
+        return;
+    }
+    $nonce = sanitize_text_field(wp_unslash($_POST['buttercup_homepage_feed_meta_nonce']));
+    if (!wp_verify_nonce($nonce, 'buttercup_homepage_feed_meta')) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    $mobile_id = isset($_POST['buttercup_home_mobile_image_id']) ? absint(wp_unslash($_POST['buttercup_home_mobile_image_id'])) : 0;
+    $desktop_id = isset($_POST['buttercup_home_desktop_image_id']) ? absint(wp_unslash($_POST['buttercup_home_desktop_image_id'])) : 0;
+
+    if ($mobile_id > 0) {
+        update_post_meta($post_id, 'buttercup_home_mobile_image_id', $mobile_id);
+    } else {
+        delete_post_meta($post_id, 'buttercup_home_mobile_image_id');
+    }
+
+    if ($desktop_id > 0) {
+        update_post_meta($post_id, 'buttercup_home_desktop_image_id', $desktop_id);
+    } else {
+        delete_post_meta($post_id, 'buttercup_home_desktop_image_id');
+    }
+}
+add_action('save_post', 'buttercup_save_homepage_feed_meta_box');
+
+function buttercup_enqueue_homepage_feed_meta_assets($hook)
+{
+    if ($hook !== 'post.php' && $hook !== 'post-new.php') {
+        return;
+    }
+
+    $screen = get_current_screen();
+    if (!$screen || !in_array($screen->post_type, ['post', 'page'], true)) {
+        return;
+    }
+
+    wp_enqueue_media();
+
+    $script_path = __DIR__ . '/assets/homepage-meta.js';
+    if (file_exists($script_path)) {
+        wp_enqueue_script(
+            'buttercup-homepage-meta',
+            plugins_url('assets/homepage-meta.js', __FILE__),
+            ['jquery'],
+            filemtime($script_path),
+            true
+        );
+    }
+}
+add_action('admin_enqueue_scripts', 'buttercup_enqueue_homepage_feed_meta_assets');
+
 function buttercup_blocks_init()
 {
     register_block_type(__DIR__ . '/build/team');
     register_block_type(__DIR__ . '/build/team-member');
     register_block_type(__DIR__ . '/build/row-layout');
     register_block_type(__DIR__ . '/build/row-column');
+    register_block_type(__DIR__ . '/build/homepage-feed', [
+        'render_callback' => 'buttercup_render_homepage_feed',
+    ]);
 }
 add_action('init', 'buttercup_blocks_init');
 
@@ -1028,7 +1572,30 @@ function buttercup_rest_square_image($request) {
     return rest_ensure_response($result);
 }
 
-add_action('rest_api_init', function () {
+function buttercup_rest_homepage_feed_status($request)
+{
+    $mast_tag_slug = isset($request['mastTagSlug']) ? $request['mastTagSlug'] : 'mast';
+    $home_tag_slug = isset($request['homeTagSlug']) ? $request['homeTagSlug'] : 'home';
+
+    $feed = buttercup_homepage_feed_collect($mast_tag_slug, $home_tag_slug);
+
+    $response = [
+        'mastTagSlug' => $feed['mast_tag_slug'],
+        'homeTagSlug' => $feed['home_tag_slug'],
+        'mastCount' => intval($feed['mast_count']),
+        'homeCount' => intval($feed['home_count']),
+        'mastOverflow' => !empty($feed['mast_overflow']),
+        'homeOverflow' => !empty($feed['home_overflow']),
+        'mastSelected' => buttercup_homepage_feed_summarize_posts($feed['mast_selected'] ? [$feed['mast_selected']] : []),
+        'homeSelected' => buttercup_homepage_feed_summarize_posts($feed['home_selected']),
+        'dualTagged' => buttercup_homepage_feed_summarize_posts($feed['dual_posts']),
+    ];
+
+    return rest_ensure_response($response);
+}
+
+function buttercup_register_rest_routes()
+{
     register_rest_route('buttercup/v1', '/square-image', [
         'methods' => 'POST',
         'callback' => 'buttercup_rest_square_image',
@@ -1042,4 +1609,25 @@ add_action('rest_api_init', function () {
             ],
         ],
     ]);
-});
+
+    register_rest_route('buttercup/v1', '/homepage-feed-status', [
+        'methods' => 'GET',
+        'callback' => 'buttercup_rest_homepage_feed_status',
+        'permission_callback' => function () {
+            return current_user_can('edit_posts');
+        },
+        'args' => [
+            'mastTagSlug' => [
+                'type' => 'string',
+                'required' => false,
+                'sanitize_callback' => 'sanitize_title',
+            ],
+            'homeTagSlug' => [
+                'type' => 'string',
+                'required' => false,
+                'sanitize_callback' => 'sanitize_title',
+            ],
+        ],
+    ]);
+}
+add_action('rest_api_init', 'buttercup_register_rest_routes');

@@ -1,0 +1,32 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "buttercup/homepage-feed",
+    "version": "1.0.0",
+    "title": "Homepage Feed",
+    "category": "widgets",
+    "icon": "welcome-widgets-menus",
+    "description": "Render homepage sections from posts/pages tagged mast and home.",
+    "supports": {
+        "html": false,
+        "align": ["wide", "full"]
+    },
+    "textdomain": "buttercup",
+    "editorScript": "file:./index.js",
+    "editorStyle": "file:./index.css",
+    "style": "file:./style-index.css",
+    "attributes": {
+        "ctaLabel": {
+            "type": "string",
+            "default": "Read More"
+        },
+        "homeTagSlug": {
+            "type": "string",
+            "default": "home"
+        },
+        "mastTagSlug": {
+            "type": "string",
+            "default": "mast"
+        }
+    }
+}

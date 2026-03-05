@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "files": [
+    "buttercup.php",
+    "build",
+    "assets/homepage-meta.js",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "wp-scripts build",
     "check-engines": "wp-scripts check-engines",
