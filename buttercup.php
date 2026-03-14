@@ -1881,15 +1881,30 @@ function buttercup_render_member_page()
         $bio_html = wp_kses_post($short_bio);
     }
 
+    $clamp_int = static function ($value, $min, $max) {
+        $value = intval($value);
+        if ($value < $min) {
+            return $min;
+        }
+        if ($value > $max) {
+            return $max;
+        }
+        return $value;
+    };
+
     $image_shape = $team['imageShape'] ?? 'circle';
-    $image_size = isset($team['imageSize']) ? intval($team['imageSize']) : 600;
+    $image_size = $clamp_int(isset($team['imageSize']) ? $team['imageSize'] : 192, 40, 600);
     $squircle_radius = isset($team['squircleRadius']) ? floatval($team['squircleRadius']) : 22;
     $member_card_bg = isset($team['memberPageCardBackground']) ? trim($team['memberPageCardBackground']) : '';
-    $member_card_radius = isset($team['memberPageCardRadius']) ? intval($team['memberPageCardRadius']) : 20;
-    $member_card_padding = isset($team['memberPageCardPadding']) ? intval($team['memberPageCardPadding']) : 24;
-    $member_gap = isset($team['memberPageGap']) ? intval($team['memberPageGap']) : 32;
-    $member_left = isset($team['memberPageLeftWidth']) ? intval($team['memberPageLeftWidth']) : 280;
+    $member_card_radius = $clamp_int(isset($team['memberPageCardRadius']) ? $team['memberPageCardRadius'] : 20, 0, 32);
+    $member_card_padding = $clamp_int(isset($team['memberPageCardPadding']) ? $team['memberPageCardPadding'] : 24, 12, 40);
+    $member_gap = $clamp_int(isset($team['memberPageGap']) ? $team['memberPageGap'] : 32, 16, 64);
+    $member_left = $clamp_int(isset($team['memberPageLeftWidth']) ? $team['memberPageLeftWidth'] : 280, 220, 360);
     $member_shadow = $team['memberPageCardShadow'] ?? 'none';
+
+    // Keep profile image within the card content area even with extreme settings.
+    $image_size_cap = max(40, $member_left - (2 * $member_card_padding));
+    $image_size = min($image_size, $image_size_cap);
 
     $member_title = $name !== '' ? $name : __('Team Member', 'buttercup');
     add_filter('document_title_parts', function ($parts) use ($member_title) {
