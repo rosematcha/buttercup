@@ -1,0 +1,158 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "buttercup/tag-showcase",
+	"version": "1.0.0",
+	"title": "Tag Showcase",
+	"category": "widgets",
+	"icon": "screenoptions",
+	"description": "Display a responsive grid of posts/pages filtered by tag.",
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ]
+	},
+	"textdomain": "buttercup",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"attributes": {
+		"tagSlugs": {
+			"type": "array",
+			"default": [],
+			"items": {
+				"type": "string"
+			}
+		},
+		"tagMatch": {
+			"type": "string",
+			"default": "any"
+		},
+		"enableMultiTag": {
+			"type": "boolean",
+			"default": false
+		},
+		"postTypes": {
+			"type": "array",
+			"default": [ "post", "page" ],
+			"items": {
+				"type": "string"
+			}
+		},
+		"orderBy": {
+			"type": "string",
+			"default": "date"
+		},
+		"order": {
+			"type": "string",
+			"default": "desc"
+		},
+		"maxItems": {
+			"type": "number",
+			"default": 12
+		},
+		"offset": {
+			"type": "number",
+			"default": 0
+		},
+		"excludeCurrentPost": {
+			"type": "boolean",
+			"default": false
+		},
+		"showThumbnail": {
+			"type": "boolean",
+			"default": true
+		},
+		"showTitle": {
+			"type": "boolean",
+			"default": true
+		},
+		"showSnippet": {
+			"type": "boolean",
+			"default": true
+		},
+		"showButton": {
+			"type": "boolean",
+			"default": true
+		},
+		"showType": {
+			"type": "boolean",
+			"default": false
+		},
+		"showDate": {
+			"type": "boolean",
+			"default": false
+		},
+		"snippetWords": {
+			"type": "number",
+			"default": 20
+		},
+		"buttonLabel": {
+			"type": "string",
+			"default": "Read More"
+		},
+		"clickMode": {
+			"type": "string",
+			"default": "card-cta"
+		},
+		"openInNewTab": {
+			"type": "boolean",
+			"default": false
+		},
+		"buttonStyle": {
+			"type": "string",
+			"default": "solid"
+		},
+		"minWidthDesktop": {
+			"type": "number",
+			"default": 260
+		},
+		"minWidthTablet": {
+			"type": "number",
+			"default": 220
+		},
+		"minWidthMobile": {
+			"type": "number",
+			"default": 160
+		},
+		"maxColsDesktop": {
+			"type": "number",
+			"default": 4
+		},
+		"maxColsTablet": {
+			"type": "number",
+			"default": 3
+		},
+		"maxColsMobile": {
+			"type": "number",
+			"default": 2
+		},
+		"columnGap": {
+			"type": "number",
+			"default": 24
+		},
+		"rowGap": {
+			"type": "number",
+			"default": 24
+		},
+		"textAlign": {
+			"type": "string",
+			"default": "left"
+		},
+		"imageAspectRatio": {
+			"type": "string",
+			"default": "16/9"
+		},
+		"cardPadding": {
+			"type": "number",
+			"default": 20
+		},
+		"cardRadius": {
+			"type": "number",
+			"default": 12
+		},
+		"cardBackground": {
+			"type": "string",
+			"default": ""
+		}
+	}
+}

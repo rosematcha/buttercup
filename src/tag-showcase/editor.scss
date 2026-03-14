@@ -1,0 +1,42 @@
+.buttercup-tag-showcase-editor {
+	border: 1px solid #dcdcdc;
+	padding: 16px;
+	border-radius: 6px;
+
+	h3 {
+		margin: 0 0 10px;
+	}
+
+	.notice {
+		margin: 10px 0;
+	}
+}
+
+.buttercup-tag-showcase-editor__summary {
+	margin: 0 0 12px;
+	color: #555;
+}
+
+.buttercup-tag-showcase-editor__loading {
+	padding: 8px 0;
+}
+
+.buttercup-tag-showcase-editor__status {
+	margin: 8px 0 10px;
+	font-size: 13px;
+	color: #1e1e1e;
+}
+
+.buttercup-tag-showcase-editor__preview {
+	margin-top: 12px;
+}
+
+.buttercup-tag-showcase-editor__checkboxes {
+	padding: 10px 0;
+
+	p {
+		margin: 0 0 8px;
+		font-size: 13px;
+		font-weight: 600;
+	}
+}
