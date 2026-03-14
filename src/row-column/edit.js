@@ -3,14 +3,13 @@ import {
     useBlockProps,
     InnerBlocks,
     InspectorControls,
+    ColorPalette,
 } from '@wordpress/block-editor';
 import {
     PanelBody,
     RangeControl,
     SelectControl,
     ToggleControl,
-    ColorPalette,
-    __experimentalNumberControl as NumberControl,
 } from '@wordpress/components';
 
 const VALIGN_OPTIONS = [
@@ -21,7 +20,7 @@ const VALIGN_OPTIONS = [
     { label: __('Stretch', 'buttercup'), value: 'stretch' },
 ];
 
-export default function Edit({ attributes, setAttributes, context }) {
+export default function Edit({ attributes, setAttributes }) {
     const {
         desktopOrder,
         tabletOrder,
@@ -37,8 +36,6 @@ export default function Edit({ attributes, setAttributes, context }) {
         hideOnTablet,
         hideOnMobile,
     } = attributes;
-
-    const rowColumns = context['buttercup/rowColumns'] || 2;
 
     const classes = [
         'buttercup-row-column',
@@ -84,30 +81,33 @@ export default function Edit({ attributes, setAttributes, context }) {
                     <p style={{ fontSize: 12, color: '#757575', margin: '0 0 12px' }}>
                         {__('Set the display order for this column at each breakpoint. Lower numbers appear first. 0 = default position.', 'buttercup')}
                     </p>
-                    <NumberControl
+                    <RangeControl
                         label={__('Desktop Order', 'buttercup')}
                         value={desktopOrder}
                         onChange={(v) => setAttributes({ desktopOrder: parseInt(v, 10) || 0 })}
                         min={0}
                         max={10}
+                        step={1}
                         __nextHasNoMarginBottom
                     />
                     <div style={{ height: 8 }} />
-                    <NumberControl
+                    <RangeControl
                         label={__('Tablet Order', 'buttercup')}
                         value={tabletOrder}
                         onChange={(v) => setAttributes({ tabletOrder: parseInt(v, 10) || 0 })}
                         min={0}
                         max={10}
+                        step={1}
                         __nextHasNoMarginBottom
                     />
                     <div style={{ height: 8 }} />
-                    <NumberControl
+                    <RangeControl
                         label={__('Mobile Order', 'buttercup')}
                         value={mobileOrder}
                         onChange={(v) => setAttributes({ mobileOrder: parseInt(v, 10) || 0 })}
                         min={0}
                         max={10}
+                        step={1}
                         __nextHasNoMarginBottom
                     />
                 </PanelBody>

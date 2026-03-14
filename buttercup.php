@@ -398,21 +398,141 @@ function buttercup_render_homepage_feed($attributes)
         return '';
     }
 
-    $classes = ['wp-block-buttercup-homepage-feed', 'buttercup-homepage-feed'];
-    $html = '<section class="' . esc_attr(implode(' ', $classes)) . '">';
-
+    $mast_html = '';
     if ($mast_post) {
-        $html .= buttercup_homepage_feed_render_item($mast_post, $cta_label, true);
+        $mast_html = buttercup_homepage_feed_render_item($mast_post, $cta_label, true);
     }
 
+    $home_html = '';
     foreach ($home_posts as $home_post) {
-        $html .= buttercup_homepage_feed_render_item($home_post, $cta_label, false);
+        $home_html .= buttercup_homepage_feed_render_item($home_post, $cta_label, false);
     }
+
+    $should_detach_mast = buttercup_homepage_feed_should_detach_mast();
+    if ($should_detach_mast && $mast_html !== '') {
+        $classes = ['wp-block-buttercup-homepage-feed', 'buttercup-homepage-feed', 'buttercup-homepage-feed--mast'];
+        $mast_section_html = '<section class="' . esc_attr(implode(' ', $classes)) . '">' . $mast_html . '</section>';
+        buttercup_homepage_feed_store_detached_mast_html($mast_section_html);
+        $mast_html = '';
+    }
+
+    if ($mast_html === '' && $home_html === '') {
+        return '';
+    }
+
+    $classes = ['wp-block-buttercup-homepage-feed', 'buttercup-homepage-feed'];
+    if ($should_detach_mast && $mast_post) {
+        $classes[] = 'is-mast-detached';
+    }
+
+    $html = '<section class="' . esc_attr(implode(' ', $classes)) . '">';
+    $html .= $mast_html;
+    $html .= $home_html;
 
     $html .= '</section>';
 
     return $html;
 }
+
+function buttercup_homepage_feed_should_detach_mast()
+{
+    if (is_admin()) {
+        return false;
+    }
+
+    if (!is_singular()) {
+        return false;
+    }
+
+    if (function_exists('wp_is_json_request') && wp_is_json_request()) {
+        return false;
+    }
+
+    return true;
+}
+
+function buttercup_homepage_feed_get_context_post_id()
+{
+    $post_id = get_the_ID();
+    if ($post_id > 0) {
+        return intval($post_id);
+    }
+
+    $queried = get_queried_object();
+    if (is_object($queried) && isset($queried->ID)) {
+        return intval($queried->ID);
+    }
+
+    return 0;
+}
+
+function buttercup_homepage_feed_store_detached_mast_html($mast_section_html)
+{
+    if (!is_string($mast_section_html) || $mast_section_html === '') {
+        return;
+    }
+
+    if (!isset($GLOBALS['buttercup_homepage_feed_detached_mast']) || !is_array($GLOBALS['buttercup_homepage_feed_detached_mast'])) {
+        $GLOBALS['buttercup_homepage_feed_detached_mast'] = [];
+    }
+
+    $post_id = buttercup_homepage_feed_get_context_post_id();
+    if (isset($GLOBALS['buttercup_homepage_feed_detached_mast'][$post_id])) {
+        return;
+    }
+
+    $GLOBALS['buttercup_homepage_feed_detached_mast'][$post_id] = $mast_section_html;
+}
+
+function buttercup_homepage_feed_pop_detached_mast_html()
+{
+    if (!isset($GLOBALS['buttercup_homepage_feed_detached_mast']) || !is_array($GLOBALS['buttercup_homepage_feed_detached_mast'])) {
+        return '';
+    }
+
+    $post_id = buttercup_homepage_feed_get_context_post_id();
+    if ($post_id > 0 && isset($GLOBALS['buttercup_homepage_feed_detached_mast'][$post_id])) {
+        $html = $GLOBALS['buttercup_homepage_feed_detached_mast'][$post_id];
+        unset($GLOBALS['buttercup_homepage_feed_detached_mast'][$post_id]);
+        return $html;
+    }
+
+    if (isset($GLOBALS['buttercup_homepage_feed_detached_mast'][0])) {
+        $html = $GLOBALS['buttercup_homepage_feed_detached_mast'][0];
+        unset($GLOBALS['buttercup_homepage_feed_detached_mast'][0]);
+        return $html;
+    }
+
+    foreach ($GLOBALS['buttercup_homepage_feed_detached_mast'] as $key => $html) {
+        unset($GLOBALS['buttercup_homepage_feed_detached_mast'][$key]);
+        return is_string($html) ? $html : '';
+    }
+
+    return '';
+}
+
+function buttercup_homepage_feed_prepend_detached_mast_to_content($content)
+{
+    if (!is_string($content) || $content === '') {
+        return $content;
+    }
+
+    if (!is_singular()) {
+        return $content;
+    }
+
+    if (!in_the_loop() || !is_main_query()) {
+        return $content;
+    }
+
+    $mast_html = buttercup_homepage_feed_pop_detached_mast_html();
+    if ($mast_html === '') {
+        return $content;
+    }
+
+    return $mast_html . $content;
+}
+add_filter('the_content', 'buttercup_homepage_feed_prepend_detached_mast_to_content', 11);
 
 function buttercup_register_homepage_feed_meta()
 {
