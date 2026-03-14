@@ -132,9 +132,13 @@ export default function Edit( { attributes, setAttributes } ) {
 				if ( typeObj.slug === 'attachment' ) {
 					return false;
 				}
-				return Array.isArray( typeObj.taxonomies )
-					? typeObj.taxonomies.includes( 'post_tag' )
-					: false;
+				if ( [ 'post', 'page' ].includes( typeObj.slug ) ) {
+					return true;
+				}
+				return (
+					Array.isArray( typeObj.taxonomies ) &&
+					typeObj.taxonomies.includes( 'post_tag' )
+				);
 			} )
 			.map( ( typeObj ) => ( {
 				slug: typeObj.slug,

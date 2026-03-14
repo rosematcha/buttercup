@@ -812,7 +812,7 @@ function buttercup_tag_showcase_get_valid_post_types()
         if (in_array($type, ['attachment', 'revision', 'nav_menu_item', 'wp_block'], true)) {
             continue;
         }
-        if (!is_array($obj->taxonomies) || !in_array('post_tag', $obj->taxonomies, true)) {
+        if (!is_object_in_taxonomy($type, 'post_tag')) {
             continue;
         }
         $valid[] = $type;
