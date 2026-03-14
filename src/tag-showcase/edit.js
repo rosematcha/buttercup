@@ -308,12 +308,22 @@ export default function Edit( { attributes, setAttributes } ) {
 								checked={ selectedPostTypes.includes(
 									typeItem.slug
 								) }
+								disabled={
+									selectedPostTypes.length === 1 &&
+									selectedPostTypes.includes( typeItem.slug )
+								}
 								onChange={ ( checked ) =>
 									onTogglePostType( typeItem.slug, checked )
 								}
 								__nextHasNoMarginBottom
 							/>
 						) ) }
+						<p className="buttercup-tag-showcase-editor__hint">
+							{ __(
+								'At least one post type must remain selected.',
+								'buttercup'
+							) }
+						</p>
 					</div>
 					<SelectControl
 						label={ __( 'Order By', 'buttercup' ) }

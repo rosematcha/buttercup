@@ -7,6 +7,7 @@
 	"category": "widgets",
 	"icon": "screenoptions",
 	"description": "Display a responsive grid of posts/pages filtered by tag.",
+	"keywords": [ "tag", "grid", "showcase", "posts", "pages" ],
 	"supports": {
 		"html": false,
 		"align": [ "wide", "full" ]

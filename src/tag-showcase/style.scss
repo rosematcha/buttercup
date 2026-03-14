@@ -12,7 +12,7 @@
 		display: grid;
 		column-gap: var(--buttercup-ts-col-gap);
 		row-gap: var(--buttercup-ts-row-gap);
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--buttercup-ts-min-width)), 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--buttercup-ts-min-width)), 1fr));
 		max-width: calc((var(--buttercup-ts-max-cols) * var(--buttercup-ts-min-width)) + ((var(--buttercup-ts-max-cols) - 1) * var(--buttercup-ts-col-gap)));
 		margin-left: auto;
 		margin-right: auto;
