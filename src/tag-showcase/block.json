@@ -103,6 +103,34 @@
 			"type": "string",
 			"default": "solid"
 		},
+		"buttonBackground": {
+			"type": "string",
+			"default": ""
+		},
+		"buttonTextColor": {
+			"type": "string",
+			"default": ""
+		},
+		"buttonBorderColor": {
+			"type": "string",
+			"default": ""
+		},
+		"buttonRadius": {
+			"type": "number",
+			"default": 8
+		},
+		"buttonPaddingY": {
+			"type": "number",
+			"default": 10
+		},
+		"buttonPaddingX": {
+			"type": "number",
+			"default": 16
+		},
+		"buttonFontSize": {
+			"type": "number",
+			"default": 16
+		},
 		"minWidthDesktop": {
 			"type": "number",
 			"default": 260
@@ -149,7 +177,7 @@
 		},
 		"cardRadius": {
 			"type": "number",
-			"default": 12
+			"default": 10
 		},
 		"cardBackground": {
 			"type": "string",

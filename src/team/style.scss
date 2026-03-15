@@ -1,39 +1,39 @@
 .buttercup-team {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(var(--buttercup-min-card, 200px), 1fr));
-    gap: var(--buttercup-row-gap, 40px) var(--buttercup-col-gap, 32px);
-    padding: 16px 0;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(var(--buttercup-min-card, 200px), 1fr));
+	gap: var(--buttercup-row-gap, 40px) var(--buttercup-col-gap, 32px);
+	padding: 16px 0;
 
-    >* {
-        width: 100%;
-        min-width: 0;
-    }
+	>* {
+		width: 100%;
+		min-width: 0;
+	}
 
-    /* ── Text alignment ── */
-    &--align-center .buttercup-team-member {
-        text-align: center;
-        align-items: center;
-    }
+	/* ── Text alignment ── */
+	&--align-center .buttercup-team-member {
+		text-align: center;
+		align-items: center;
+	}
 
-    &--align-left .buttercup-team-member {
-        text-align: left;
-        align-items: flex-start;
-    }
+	&--align-left .buttercup-team-member {
+		text-align: left;
+		align-items: flex-start;
+	}
 
-    &--align-center .buttercup-team-member__social {
-        justify-content: center;
-    }
+	&--align-center .buttercup-team-member__social {
+		justify-content: center;
+	}
 
-    &--align-left .buttercup-team-member__social {
-        justify-content: flex-start;
-    }
+	&--align-left .buttercup-team-member__social {
+		justify-content: flex-start;
+	}
 
-    /* ── Show/hide ── */
-    &--hide-bio .buttercup-team-member__bio-wrap {
-        display: none;
-    }
+	/* ── Show/hide ── */
+	&--hide-bio .buttercup-team-member__bio-wrap {
+		display: none;
+	}
 
-    &--hide-social .buttercup-team-member__social {
-        display: none;
-    }
+	&--hide-social .buttercup-team-member__social {
+		display: none;
+	}
 }

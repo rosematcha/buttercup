@@ -4,10 +4,19 @@ import {
 	InspectorControls,
 	store as blockEditorStore,
 } from '@wordpress/block-editor';
-import { PanelBody, TextControl, Notice, Spinner } from '@wordpress/components';
+import {
+	PanelBody,
+	TextControl,
+	Notice,
+	Spinner,
+	FormTokenField,
+	Button,
+} from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
-import { useEffect, useState } from '@wordpress/element';
+import { useEffect, useMemo, useRef, useState } from '@wordpress/element';
+import { cleanForSlug } from '@wordpress/url';
 import apiFetch from '@wordpress/api-fetch';
+import ServerSideRender from '@wordpress/server-side-render';
 
 function countHomepageFeedBlocks( blocks ) {
 	let count = 0;
@@ -25,12 +34,34 @@ function countHomepageFeedBlocks( blocks ) {
 }
 
 function normalizeSlug( value, fallback ) {
-	const slug = String( value || '' )
-		.toLowerCase()
-		.trim()
-		.replace( /[^a-z0-9-_]/g, '' );
-
+	const slug = cleanForSlug( String( value || '' ).trim() );
 	return slug || fallback;
+}
+
+function normalizeTokenSlug( tokens ) {
+	if ( ! Array.isArray( tokens ) || tokens.length === 0 ) {
+		return '';
+	}
+	const last = tokens[ tokens.length - 1 ];
+	return normalizeSlug( last, '' );
+}
+
+function getTagCountHint( input, fallback, tagCounts ) {
+	const resolvedSlug = normalizeSlug( input, fallback );
+	if ( tagCounts.has( resolvedSlug ) ) {
+		return `${ resolvedSlug }: ${ Number(
+			tagCounts.get( resolvedSlug ) || 0
+		) } ${ __( 'item(s)', 'buttercup' ) }`;
+	}
+
+	if ( input ) {
+		return `${ resolvedSlug }: ${ __(
+			'custom slug (term not found yet)',
+			'buttercup'
+		) }`;
+	}
+
+	return `${ __( 'Using default', 'buttercup' ) }: ${ fallback }`;
 }
 
 export default function Edit( { attributes, setAttributes } ) {
@@ -41,9 +72,39 @@ export default function Edit( { attributes, setAttributes } ) {
 		[]
 	);
 
+	const tags = useSelect(
+		( select ) =>
+			select( 'core' ).getEntityRecords( 'taxonomy', 'post_tag', {
+				per_page: 100,
+				hide_empty: false,
+			} ) || [],
+		[]
+	);
+
 	const [ status, setStatus ] = useState( null );
 	const [ isLoading, setIsLoading ] = useState( true );
 	const [ errorMessage, setErrorMessage ] = useState( '' );
+	const [ previewViewport, setPreviewViewport ] = useState( 'desktop' );
+	const statusRequestRef = useRef( 0 );
+
+	const tagSuggestions = useMemo(
+		() =>
+			tags
+				.map( ( term ) => term.slug )
+				.filter( Boolean )
+				.sort( ( a, b ) => a.localeCompare( b ) ),
+		[ tags ]
+	);
+
+	const tagCounts = useMemo( () => {
+		const map = new Map();
+		tags.forEach( ( term ) => {
+			if ( term?.slug ) {
+				map.set( term.slug, Number( term.count ) || 0 );
+			}
+		} );
+		return map;
+	}, [ tags ] );
 
 	const blockCount = countHomepageFeedBlocks( allBlocks );
 	const countsMessage = `${ __( 'Found', 'buttercup' ) } ${ Number(
@@ -53,45 +114,61 @@ export default function Edit( { attributes, setAttributes } ) {
 	) } ${ __( 'home item(s).', 'buttercup' ) }`;
 
 	useEffect( () => {
-		let cancelled = false;
 		const mast = normalizeSlug( mastTagSlug, 'mast' );
 		const home = normalizeSlug( homeTagSlug, 'home' );
+
+		const requestId = statusRequestRef.current + 1;
+		statusRequestRef.current = requestId;
 
 		setIsLoading( true );
 		setErrorMessage( '' );
 
-		const query = new URLSearchParams( {
-			mastTagSlug: mast,
-			homeTagSlug: home,
-		} );
+		const controller =
+			typeof AbortController !== 'undefined'
+				? new AbortController()
+				: null;
 
-		apiFetch( {
-			path: `/buttercup/v1/homepage-feed-status?${ query.toString() }`,
-		} )
-			.then( ( data ) => {
-				if ( cancelled ) {
-					return;
-				}
-				setStatus( data );
-				setIsLoading( false );
-			} )
-			.catch( ( error ) => {
-				if ( cancelled ) {
-					return;
-				}
-				setStatus( null );
-				setIsLoading( false );
-				setErrorMessage(
-					error?.message ||
-						__(
-							'Unable to load homepage feed status.',
-							'buttercup'
-						)
-				);
+		const timer = setTimeout( () => {
+			const query = new URLSearchParams( {
+				mastTagSlug: mast,
+				homeTagSlug: home,
 			} );
 
+			apiFetch( {
+				path: `/buttercup/v1/homepage-feed-status?${ query.toString() }`,
+				signal: controller?.signal,
+			} )
+				.then( ( data ) => {
+					if ( requestId !== statusRequestRef.current ) {
+						return;
+					}
+					setStatus( data );
+					setIsLoading( false );
+				} )
+				.catch( ( error ) => {
+					if (
+						requestId !== statusRequestRef.current ||
+						error?.name === 'AbortError'
+					) {
+						return;
+					}
+					setStatus( null );
+					setIsLoading( false );
+					setErrorMessage(
+						error?.message ||
+							__(
+								'Unable to load homepage feed status.',
+								'buttercup'
+							)
+					);
+				} );
+		}, 280 );
+
 		return () => {
-			cancelled = true;
+			clearTimeout( timer );
+			if ( controller ) {
+				controller.abort();
+			}
 		};
 	}, [ mastTagSlug, homeTagSlug ] );
 
@@ -115,24 +192,42 @@ export default function Edit( { attributes, setAttributes } ) {
 						) }
 						__nextHasNoMarginBottom
 					/>
-					<TextControl
+					<FormTokenField
 						label={ __( 'Mast Tag Slug', 'buttercup' ) }
-						value={ mastTagSlug }
-						onChange={ ( value ) =>
-							setAttributes( { mastTagSlug: value } )
+						value={ mastTagSlug ? [ mastTagSlug ] : [] }
+						onChange={ ( tokens ) =>
+							setAttributes( {
+								mastTagSlug: normalizeTokenSlug( tokens ),
+							} )
 						}
-						help={ __( 'Default: mast', 'buttercup' ) }
+						suggestions={ tagSuggestions }
+						help={ __(
+							'Type or select a tag slug. Custom values are allowed.',
+							'buttercup'
+						) }
 						__nextHasNoMarginBottom
 					/>
-					<TextControl
+					<p className="buttercup-homepage-feed-editor__tag-hint">
+						{ getTagCountHint( mastTagSlug, 'mast', tagCounts ) }
+					</p>
+					<FormTokenField
 						label={ __( 'Home Tag Slug', 'buttercup' ) }
-						value={ homeTagSlug }
-						onChange={ ( value ) =>
-							setAttributes( { homeTagSlug: value } )
+						value={ homeTagSlug ? [ homeTagSlug ] : [] }
+						onChange={ ( tokens ) =>
+							setAttributes( {
+								homeTagSlug: normalizeTokenSlug( tokens ),
+							} )
 						}
-						help={ __( 'Default: home', 'buttercup' ) }
+						suggestions={ tagSuggestions }
+						help={ __(
+							'Type or select a tag slug. Custom values are allowed.',
+							'buttercup'
+						) }
 						__nextHasNoMarginBottom
 					/>
+					<p className="buttercup-homepage-feed-editor__tag-hint">
+						{ getTagCountHint( homeTagSlug, 'home', tagCounts ) }
+					</p>
 				</PanelBody>
 			</InspectorControls>
 			<div { ...blockProps }>
@@ -264,6 +359,63 @@ export default function Edit( { attributes, setAttributes } ) {
 						</div>
 					</div>
 				) }
+
+				<div className="buttercup-homepage-feed-editor__preview">
+					<div className="buttercup-homepage-feed-editor__preview-controls">
+						<Button
+							variant={
+								previewViewport === 'desktop'
+									? 'primary'
+									: 'secondary'
+							}
+							onClick={ () => setPreviewViewport( 'desktop' ) }
+						>
+							{ __( 'Desktop', 'buttercup' ) }
+						</Button>
+						<Button
+							variant={
+								previewViewport === 'tablet'
+									? 'primary'
+									: 'secondary'
+							}
+							onClick={ () => setPreviewViewport( 'tablet' ) }
+						>
+							{ __( 'Tablet', 'buttercup' ) }
+						</Button>
+						<Button
+							variant={
+								previewViewport === 'mobile'
+									? 'primary'
+									: 'secondary'
+							}
+							onClick={ () => setPreviewViewport( 'mobile' ) }
+						>
+							{ __( 'Mobile', 'buttercup' ) }
+						</Button>
+					</div>
+					<div
+						className={ `buttercup-homepage-feed-editor__preview-frame is-${ previewViewport }` }
+					>
+						<div className="buttercup-homepage-feed-editor__preview-body">
+							<ServerSideRender
+								block="buttercup/homepage-feed"
+								attributes={ {
+									...attributes,
+									mastTagSlug: normalizeSlug(
+										mastTagSlug,
+										'mast'
+									),
+									homeTagSlug: normalizeSlug(
+										homeTagSlug,
+										'home'
+									),
+								} }
+								httpMethod="GET"
+								skipBlockSupportAttributes
+							/>
+						</div>
+					</div>
+				</div>
 			</div>
 		</>
 	);

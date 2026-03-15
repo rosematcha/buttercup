@@ -873,6 +873,13 @@ function buttercup_tag_showcase_sanitize_attributes($attributes)
         'clickMode' => 'card-cta',
         'openInNewTab' => false,
         'buttonStyle' => 'solid',
+        'buttonBackground' => '',
+        'buttonTextColor' => '',
+        'buttonBorderColor' => '',
+        'buttonRadius' => 8,
+        'buttonPaddingY' => 10,
+        'buttonPaddingX' => 16,
+        'buttonFontSize' => 16,
         'minWidthDesktop' => 260,
         'minWidthTablet' => 220,
         'minWidthMobile' => 160,
@@ -884,7 +891,7 @@ function buttercup_tag_showcase_sanitize_attributes($attributes)
         'textAlign' => 'left',
         'imageAspectRatio' => '16/9',
         'cardPadding' => 20,
-        'cardRadius' => 12,
+        'cardRadius' => 10,
         'cardBackground' => '',
     ];
 
@@ -986,6 +993,13 @@ function buttercup_tag_showcase_sanitize_attributes($attributes)
         'click_mode' => $click_mode,
         'open_in_new_tab' => !empty($attrs['openInNewTab']),
         'button_style' => $button_style,
+        'button_background' => buttercup_tag_showcase_sanitize_css_color($attrs['buttonBackground']),
+        'button_text_color' => buttercup_tag_showcase_sanitize_css_color($attrs['buttonTextColor']),
+        'button_border_color' => buttercup_tag_showcase_sanitize_css_color($attrs['buttonBorderColor']),
+        'button_radius' => max(0, min(30, intval($attrs['buttonRadius']))),
+        'button_padding_y' => max(0, min(24, intval($attrs['buttonPaddingY']))),
+        'button_padding_x' => max(0, min(40, intval($attrs['buttonPaddingX']))),
+        'button_font_size' => max(12, min(28, intval($attrs['buttonFontSize']))),
         'min_width_desktop' => max(140, min(600, intval($attrs['minWidthDesktop']))),
         'min_width_tablet' => max(120, min(420, intval($attrs['minWidthTablet']))),
         'min_width_mobile' => max(100, min(320, intval($attrs['minWidthMobile']))),
@@ -1091,7 +1105,21 @@ function buttercup_tag_showcase_build_style_attr($attrs)
         '--buttercup-ts-card-radius:' . $attrs['card_radius'] . 'px',
         '--buttercup-ts-card-bg:' . $card_background,
         '--buttercup-ts-aspect-ratio:' . $aspect_ratio,
+        '--buttercup-ts-button-radius:' . $attrs['button_radius'] . 'px',
+        '--buttercup-ts-button-padding-y:' . $attrs['button_padding_y'] . 'px',
+        '--buttercup-ts-button-padding-x:' . $attrs['button_padding_x'] . 'px',
+        '--buttercup-ts-button-font-size:' . $attrs['button_font_size'] . 'px',
     ];
+
+    if ($attrs['button_background'] !== '') {
+        $styles[] = '--buttercup-ts-button-bg:' . $attrs['button_background'];
+    }
+    if ($attrs['button_text_color'] !== '') {
+        $styles[] = '--buttercup-ts-button-text:' . $attrs['button_text_color'];
+    }
+    if ($attrs['button_border_color'] !== '') {
+        $styles[] = '--buttercup-ts-button-border:' . $attrs['button_border_color'];
+    }
 
     return implode(';', $styles) . ';';
 }

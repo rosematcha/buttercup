@@ -4,9 +4,13 @@
 	--buttercup-ts-col-gap: 24px;
 	--buttercup-ts-row-gap: 24px;
 	--buttercup-ts-card-padding: 20px;
-	--buttercup-ts-card-radius: 12px;
+	--buttercup-ts-card-radius: 10px;
 	--buttercup-ts-card-bg: transparent;
 	--buttercup-ts-aspect-ratio: 16 / 9;
+	--buttercup-ts-button-radius: 8px;
+	--buttercup-ts-button-padding-y: 10px;
+	--buttercup-ts-button-padding-x: 16px;
+	--buttercup-ts-button-font-size: 1rem;
 
 	.buttercup-tag-showcase__grid {
 		display: grid;
@@ -18,6 +22,10 @@
 		margin-right: auto;
 	}
 
+	.buttercup-tag-showcase__grid > * {
+		min-width: 0;
+	}
+
 	.buttercup-tag-showcase__card {
 		position: relative;
 		display: flex;
@@ -25,6 +33,8 @@
 		height: 100%;
 		background: var(--buttercup-ts-card-bg);
 		border-radius: var(--buttercup-ts-card-radius);
+		border: 1px solid rgb(15 23 42 / 9%);
+		box-shadow: 0 2px 10px rgb(15 23 42 / 6%);
 		overflow: hidden;
 	}
 
@@ -58,6 +68,7 @@
 		position: relative;
 		display: flex;
 		flex-direction: column;
+		flex: 1 1 auto;
 		gap: 10px;
 		padding: var(--buttercup-ts-card-padding);
 		height: 100%;
@@ -100,21 +111,29 @@
 		margin-top: auto;
 		font-weight: 600;
 		text-decoration: none;
-		padding: 10px 16px;
-		border-radius: 6px;
+		font-size: var(--buttercup-ts-button-font-size);
+		padding: var(--buttercup-ts-button-padding-y) var(--buttercup-ts-button-padding-x);
+		border-radius: var(--buttercup-ts-button-radius);
+		border: 1px solid transparent;
+		transition:
+			background-color 0.2s ease,
+			color 0.2s ease,
+			border-color 0.2s ease;
+		align-self: flex-start;
 	}
 
 	.buttercup-tag-showcase__button--solid,
 	.buttercup-tag-showcase__button-visual--solid {
-		background: #111;
-		color: #fff;
+		background: var(--buttercup-ts-button-bg, #111);
+		color: var(--buttercup-ts-button-text, #fff);
+		border-color: var(--buttercup-ts-button-border, #111);
 	}
 
 	.buttercup-tag-showcase__button--outline,
 	.buttercup-tag-showcase__button-visual--outline {
 		background: transparent;
-		color: inherit;
-		border: 1px solid currentcolor;
+		color: var(--buttercup-ts-button-text, inherit);
+		border-color: var(--buttercup-ts-button-border, currentcolor);
 	}
 
 	.buttercup-tag-showcase__button--text,
@@ -122,7 +141,23 @@
 		padding: 0;
 		border-radius: 0;
 		background: transparent;
-		color: inherit;
+		color: var(--buttercup-ts-button-text, inherit);
+		border-color: transparent;
+	}
+
+	.buttercup-tag-showcase__button {
+		position: relative;
+		z-index: 3;
+	}
+
+	&.buttercup-tag-showcase--align-center .buttercup-tag-showcase__button,
+	&.buttercup-tag-showcase--align-center .buttercup-tag-showcase__button-visual {
+		align-self: center;
+	}
+
+	&.buttercup-tag-showcase--align-right .buttercup-tag-showcase__button,
+	&.buttercup-tag-showcase--align-right .buttercup-tag-showcase__button-visual {
+		align-self: flex-end;
 	}
 
 	.buttercup-tag-showcase__card-link {
@@ -131,11 +166,6 @@
 		z-index: 1;
 		text-indent: -9999px;
 		overflow: hidden;
-	}
-
-	.buttercup-tag-showcase__button {
-		position: relative;
-		z-index: 3;
 	}
 }
 

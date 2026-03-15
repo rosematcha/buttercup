@@ -10,13 +10,14 @@ import {
 	RangeControl,
 	SelectControl,
 	TextControl,
+	Button,
 	Notice,
 	Spinner,
 	FormTokenField,
 	CheckboxControl,
 } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
-import { useEffect, useMemo, useState } from '@wordpress/element';
+import { useEffect, useMemo, useRef, useState } from '@wordpress/element';
 import { cleanForSlug } from '@wordpress/url';
 import apiFetch from '@wordpress/api-fetch';
 import ServerSideRender from '@wordpress/server-side-render';
@@ -46,6 +47,22 @@ function booleanToInt( value ) {
 	return value ? '1' : '0';
 }
 
+function toInt( value, fallback ) {
+	const parsed = parseInt( value, 10 );
+	return Number.isNaN( parsed ) ? fallback : parsed;
+}
+
+const TAG_SHOWCASE_LAYOUT_DEFAULTS = {
+	minWidthDesktop: 260,
+	minWidthTablet: 220,
+	minWidthMobile: 160,
+	maxColsDesktop: 4,
+	maxColsTablet: 3,
+	maxColsMobile: 2,
+	columnGap: 24,
+	rowGap: 24,
+};
+
 export default function Edit( { attributes, setAttributes } ) {
 	const {
 		tagSlugs,
@@ -68,6 +85,13 @@ export default function Edit( { attributes, setAttributes } ) {
 		clickMode,
 		openInNewTab,
 		buttonStyle,
+		buttonBackground,
+		buttonTextColor,
+		buttonBorderColor,
+		buttonRadius,
+		buttonPaddingY,
+		buttonPaddingX,
+		buttonFontSize,
 		minWidthDesktop,
 		minWidthTablet,
 		minWidthMobile,
@@ -86,6 +110,8 @@ export default function Edit( { attributes, setAttributes } ) {
 	const [ status, setStatus ] = useState( null );
 	const [ statusLoading, setStatusLoading ] = useState( false );
 	const [ statusError, setStatusError ] = useState( '' );
+	const [ previewViewport, setPreviewViewport ] = useState( 'desktop' );
+	const statusRequestRef = useRef( 0 );
 
 	const tags = useSelect(
 		( select ) =>
@@ -174,43 +200,61 @@ export default function Edit( { attributes, setAttributes } ) {
 			return;
 		}
 
-		let cancelled = false;
+		const requestId = statusRequestRef.current + 1;
+		statusRequestRef.current = requestId;
+
 		setStatusLoading( true );
 		setStatusError( '' );
+		const controller =
+			typeof AbortController !== 'undefined'
+				? new AbortController()
+				: null;
 
-		const query = new URLSearchParams( {
-			tagSlugs: selectedTags.join( ',' ),
-			tagMatch,
-			postTypes: selectedPostTypes.join( ',' ),
-			excludeCurrentPost: booleanToInt( excludeCurrentPost ),
-			offset: String( offset || 0 ),
-			maxItems: String( maxItems || 12 ),
-		} );
-
-		apiFetch( {
-			path: `/buttercup/v1/tag-showcase-status?${ query.toString() }`,
-		} )
-			.then( ( data ) => {
-				if ( cancelled ) {
-					return;
-				}
-				setStatus( data );
-				setStatusLoading( false );
-			} )
-			.catch( ( error ) => {
-				if ( cancelled ) {
-					return;
-				}
-				setStatus( null );
-				setStatusLoading( false );
-				setStatusError(
-					error?.message ||
-						__( 'Unable to load Tag Showcase status.', 'buttercup' )
-				);
+		const timer = setTimeout( () => {
+			const query = new URLSearchParams( {
+				tagSlugs: selectedTags.join( ',' ),
+				tagMatch,
+				postTypes: selectedPostTypes.join( ',' ),
+				excludeCurrentPost: booleanToInt( excludeCurrentPost ),
+				offset: String( offset || 0 ),
+				maxItems: String( maxItems || 12 ),
 			} );
 
+			apiFetch( {
+				path: `/buttercup/v1/tag-showcase-status?${ query.toString() }`,
+				signal: controller?.signal,
+			} )
+				.then( ( data ) => {
+					if ( requestId !== statusRequestRef.current ) {
+						return;
+					}
+					setStatus( data );
+					setStatusLoading( false );
+				} )
+				.catch( ( error ) => {
+					if (
+						requestId !== statusRequestRef.current ||
+						error?.name === 'AbortError'
+					) {
+						return;
+					}
+					setStatus( null );
+					setStatusLoading( false );
+					setStatusError(
+						error?.message ||
+							__(
+								'Unable to load Tag Showcase status.',
+								'buttercup'
+							)
+					);
+				} );
+		}, 280 );
+
 		return () => {
-			cancelled = true;
+			clearTimeout( timer );
+			if ( controller ) {
+				controller.abort();
+			}
 		};
 	}, [
 		selectedTags,
@@ -251,6 +295,33 @@ export default function Edit( { attributes, setAttributes } ) {
 		}
 		setAttributes( { postTypes: next } );
 	};
+
+	const resetLayoutControls = () => {
+		setAttributes( TAG_SHOWCASE_LAYOUT_DEFAULTS );
+	};
+
+	const previewMaxWidthByViewport = useMemo(
+		() => ( {
+			desktop:
+				maxColsDesktop * minWidthDesktop +
+				( maxColsDesktop - 1 ) * columnGap,
+			tablet:
+				maxColsTablet * minWidthTablet +
+				( maxColsTablet - 1 ) * columnGap,
+			mobile:
+				maxColsMobile * minWidthMobile +
+				( maxColsMobile - 1 ) * columnGap,
+		} ),
+		[
+			maxColsDesktop,
+			minWidthDesktop,
+			maxColsTablet,
+			minWidthTablet,
+			maxColsMobile,
+			minWidthMobile,
+			columnGap,
+		]
+	);
 
 	const blockProps = useBlockProps( {
 		className: 'buttercup-tag-showcase-editor',
@@ -524,6 +595,97 @@ export default function Edit( { attributes, setAttributes } ) {
 						}
 						__nextHasNoMarginBottom
 					/>
+					<div style={ { marginTop: 12, marginBottom: 12 } }>
+						<div style={ { fontSize: 12, marginBottom: 6 } }>
+							{ __( 'Button Background', 'buttercup' ) }
+						</div>
+						<ColorPalette
+							value={ buttonBackground }
+							onChange={ ( value ) =>
+								setAttributes( {
+									buttonBackground: value || '',
+								} )
+							}
+						/>
+					</div>
+					<div style={ { marginTop: 12, marginBottom: 12 } }>
+						<div style={ { fontSize: 12, marginBottom: 6 } }>
+							{ __( 'Button Text Color', 'buttercup' ) }
+						</div>
+						<ColorPalette
+							value={ buttonTextColor }
+							onChange={ ( value ) =>
+								setAttributes( {
+									buttonTextColor: value || '',
+								} )
+							}
+						/>
+					</div>
+					<div style={ { marginTop: 12, marginBottom: 12 } }>
+						<div style={ { fontSize: 12, marginBottom: 6 } }>
+							{ __( 'Button Border Color', 'buttercup' ) }
+						</div>
+						<ColorPalette
+							value={ buttonBorderColor }
+							onChange={ ( value ) =>
+								setAttributes( {
+									buttonBorderColor: value || '',
+								} )
+							}
+						/>
+					</div>
+					<RangeControl
+						label={ __( 'Button Radius (px)', 'buttercup' ) }
+						value={ buttonRadius }
+						onChange={ ( value ) =>
+							setAttributes( {
+								buttonRadius: toInt( value, 8 ),
+							} )
+						}
+						min={ 0 }
+						max={ 30 }
+						step={ 1 }
+						__nextHasNoMarginBottom
+					/>
+					<RangeControl
+						label={ __( 'Button Padding Y (px)', 'buttercup' ) }
+						value={ buttonPaddingY }
+						onChange={ ( value ) =>
+							setAttributes( {
+								buttonPaddingY: toInt( value, 10 ),
+							} )
+						}
+						min={ 0 }
+						max={ 24 }
+						step={ 1 }
+						__nextHasNoMarginBottom
+					/>
+					<RangeControl
+						label={ __( 'Button Padding X (px)', 'buttercup' ) }
+						value={ buttonPaddingX }
+						onChange={ ( value ) =>
+							setAttributes( {
+								buttonPaddingX: toInt( value, 16 ),
+							} )
+						}
+						min={ 0 }
+						max={ 40 }
+						step={ 1 }
+						__nextHasNoMarginBottom
+					/>
+					<RangeControl
+						label={ __( 'Button Font Size (px)', 'buttercup' ) }
+						value={ buttonFontSize }
+						onChange={ ( value ) =>
+							setAttributes( {
+								buttonFontSize: toInt( value, 16 ),
+							} )
+						}
+						min={ 12 }
+						max={ 28 }
+						step={ 1 }
+						__nextHasNoMarginBottom
+					/>
 					<ToggleControl
 						label={ __( 'Open Links In New Tab', 'buttercup' ) }
 						checked={ !! openInNewTab }
@@ -651,6 +813,13 @@ export default function Edit( { attributes, setAttributes } ) {
 						step={ 2 }
 						__nextHasNoMarginBottom
 					/>
+					<Button
+						variant="secondary"
+						onClick={ resetLayoutControls }
+						style={ { marginTop: 12 } }
+					>
+						{ __( 'Reset Layout Defaults', 'buttercup' ) }
+					</Button>
 				</PanelBody>
 
 				<PanelBody
@@ -710,7 +879,7 @@ export default function Edit( { attributes, setAttributes } ) {
 						value={ cardRadius }
 						onChange={ ( value ) =>
 							setAttributes( {
-								cardRadius: parseInt( value, 10 ) || 12,
+								cardRadius: toInt( value, 10 ),
 							} )
 						}
 						min={ 0 }
@@ -793,12 +962,62 @@ export default function Edit( { attributes, setAttributes } ) {
 
 				{ selectedTags.length > 0 && (
 					<div className="buttercup-tag-showcase-editor__preview">
-						<ServerSideRender
-							block="buttercup/tag-showcase"
-							attributes={ attributes }
-							httpMethod="GET"
-							skipBlockSupportAttributes
-						/>
+						<div className="buttercup-tag-showcase-editor__preview-controls">
+							<Button
+								variant={
+									previewViewport === 'desktop'
+										? 'primary'
+										: 'secondary'
+								}
+								onClick={ () =>
+									setPreviewViewport( 'desktop' )
+								}
+							>
+								{ __( 'Desktop', 'buttercup' ) }
+							</Button>
+							<Button
+								variant={
+									previewViewport === 'tablet'
+										? 'primary'
+										: 'secondary'
+								}
+								onClick={ () => setPreviewViewport( 'tablet' ) }
+							>
+								{ __( 'Tablet', 'buttercup' ) }
+							</Button>
+							<Button
+								variant={
+									previewViewport === 'mobile'
+										? 'primary'
+										: 'secondary'
+								}
+								onClick={ () => setPreviewViewport( 'mobile' ) }
+							>
+								{ __( 'Mobile', 'buttercup' ) }
+							</Button>
+						</div>
+						<div
+							className={ `buttercup-tag-showcase-editor__preview-frame is-${ previewViewport }` }
+						>
+							<div
+								className="buttercup-tag-showcase-editor__preview-body"
+								style={ {
+									maxWidth: `${
+										previewMaxWidthByViewport[
+											previewViewport
+										] || previewMaxWidthByViewport.desktop
+									}px`,
+									margin: '0 auto',
+								} }
+							>
+								<ServerSideRender
+									block="buttercup/tag-showcase"
+									attributes={ attributes }
+									httpMethod="GET"
+									skipBlockSupportAttributes
+								/>
+							</div>
+						</div>
 					</div>
 				) }
 			</div>
