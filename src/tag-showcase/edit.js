@@ -21,6 +21,7 @@ import { useEffect, useMemo, useRef, useState } from '@wordpress/element';
 import { cleanForSlug } from '@wordpress/url';
 import apiFetch from '@wordpress/api-fetch';
 import ServerSideRender from '@wordpress/server-side-render';
+import { buildTagShowcaseStatusQuery } from '../shared/rest-query-utils';
 
 function sanitizeSlug( value ) {
 	const normalized = cleanForSlug( String( value || '' ).trim() );
@@ -41,10 +42,6 @@ function uniqueSlugs( values ) {
 	} );
 
 	return result;
-}
-
-function booleanToInt( value ) {
-	return value ? '1' : '0';
 }
 
 function toInt( value, fallback ) {
@@ -211,13 +208,13 @@ export default function Edit( { attributes, setAttributes } ) {
 				: null;
 
 		const timer = setTimeout( () => {
-			const query = new URLSearchParams( {
-				tagSlugs: selectedTags.join( ',' ),
+			const query = buildTagShowcaseStatusQuery( {
+				tagSlugs: selectedTags,
 				tagMatch,
-				postTypes: selectedPostTypes.join( ',' ),
-				excludeCurrentPost: booleanToInt( excludeCurrentPost ),
-				offset: String( offset || 0 ),
-				maxItems: String( maxItems || 12 ),
+				postTypes: selectedPostTypes,
+				excludeCurrentPost,
+				offset,
+				maxItems,
 			} );
 
 			apiFetch( {

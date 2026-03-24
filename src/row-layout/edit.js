@@ -447,7 +447,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				} );
 			}
 		}
-	}, [] );
+	}, [ uniqueId, allBlocks, clientId, setAttributes ] );
 
 	useEffect( () => {
 		const currentCount = innerBlocks.length;
@@ -480,7 +480,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			const newBlocks = [ ...kept.slice( 0, -1 ), updatedLast ];
 			replaceInnerBlocks( clientId, newBlocks, false );
 		}
-	}, [ columns ] );
+	}, [ columns, innerBlocks, replaceInnerBlocks, clientId ] );
 
 	const activeBgType = getActiveBgType( attributes );
 
@@ -577,8 +577,24 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		.join( ' ' );
 
 	const wrapperStyle = {};
+	wrapperStyle[ '--rl-gap-offset' ] = `${ gapOffset }px`;
+	widths.forEach( ( width, index ) => {
+		wrapperStyle[ `--rl-col-${ index + 1 }` ] = `${ width }%`;
+	} );
 	if ( paddingTop || paddingRight || paddingBottom || paddingLeft ) {
 		wrapperStyle.padding = `${ paddingTop }px ${ paddingRight }px ${ paddingBottom }px ${ paddingLeft }px`;
+	}
+	if ( tabletPadding && tabletPadding.length === 4 ) {
+		wrapperStyle[ '--rl-tablet-pt' ] = `${ tabletPadding[ 0 ] }px`;
+		wrapperStyle[ '--rl-tablet-pr' ] = `${ tabletPadding[ 1 ] }px`;
+		wrapperStyle[ '--rl-tablet-pb' ] = `${ tabletPadding[ 2 ] }px`;
+		wrapperStyle[ '--rl-tablet-pl' ] = `${ tabletPadding[ 3 ] }px`;
+	}
+	if ( mobilePadding && mobilePadding.length === 4 ) {
+		wrapperStyle[ '--rl-mobile-pt' ] = `${ mobilePadding[ 0 ] }px`;
+		wrapperStyle[ '--rl-mobile-pr' ] = `${ mobilePadding[ 1 ] }px`;
+		wrapperStyle[ '--rl-mobile-pb' ] = `${ mobilePadding[ 2 ] }px`;
+		wrapperStyle[ '--rl-mobile-pl' ] = `${ mobilePadding[ 3 ] }px`;
 	}
 	if ( marginTop ) {
 		wrapperStyle.marginTop = `${ marginTop }px`;
@@ -626,15 +642,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		innerStyle.marginLeft = 'auto';
 		innerStyle.marginRight = 'auto';
 	}
-
-	const editorColumnStyles = widths
-		.map( ( w, i ) => {
-			const basis = `calc(${ w }% - ${ gapOffset }px)`;
-			return `#block-${ clientId } .buttercup-row-column:nth-child(${
-				i + 1
-			}){flex:0 0 ${ basis };max-width:${ basis }}`;
-		} )
-		.join( '' );
 
 	const blockProps = useBlockProps( {
 		className: wrapperClasses,
@@ -1643,11 +1650,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					/>
 				</PanelBody>
 			</InspectorControls>
-			{ editorColumnStyles && (
-				<style
-					dangerouslySetInnerHTML={ { __html: editorColumnStyles } }
-				/>
-			) }
 			<div { ...blockProps }>
 				{ backgroundVideoUrl && (
 					<video

@@ -57,7 +57,7 @@ export default function save( { attributes } ) {
 		if ( ! showMemberLink ) {
 			return undefined;
 		}
-		return `./${ memberSlug }`;
+		return `?buttercup_member=${ encodeURIComponent( memberSlug ) }`;
 	};
 
 	const useSquare = profileImageSource === 'square-600';

@@ -1,0 +1,17 @@
+{
+  "name": "reese/buttercup",
+  "description": "Integration test tooling for the Buttercup WordPress plugin",
+  "type": "project",
+  "license": "MIT",
+  "require-dev": {
+    "phpunit/phpunit": "^9.6",
+    "yoast/phpunit-polyfills": "^2.0"
+  },
+  "scripts": {
+    "test:php:install": "bash bin/install-wp-tests.sh \"${WP_TESTS_DIR:-/tmp/wordpress-tests-lib}\" \"${WP_CORE_DIR:-/tmp/wordpress}\" \"${WP_TESTS_DB_NAME:-wordpress_test}\" \"${WP_TESTS_DB_USER:-root}\" \"${WP_TESTS_DB_PASS:-root}\" \"${WP_TESTS_DB_HOST:-127.0.0.1:3306}\" \"${WP_VERSION:-latest}\"",
+    "test:php": "vendor/bin/phpunit --testsuite integration"
+  },
+  "config": {
+    "sort-packages": true
+  }
+}

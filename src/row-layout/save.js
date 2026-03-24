@@ -25,55 +25,6 @@ function getColumnWidths( columns, columnLayout, columnWidths ) {
 	return Array( columns ).fill( 100 / columns );
 }
 
-function buildColumnStyles(
-	uniqueId,
-	columns,
-	columnLayout,
-	columnWidths,
-	columnGap
-) {
-	const widths = getColumnWidths( columns, columnLayout, columnWidths );
-	const gapOffset =
-		columns > 1 ? ( ( columns - 1 ) * columnGap ) / columns : 0;
-	const selector = `#buttercup-rl-${ uniqueId }`;
-
-	let css = '';
-
-	widths.forEach( ( w, i ) => {
-		const basis = `calc(${ w }% - ${ gapOffset }px)`;
-		css += `${ selector } .buttercup-row-column:nth-child(${
-			i + 1
-		}){flex:0 0 ${ basis };max-width:${ basis }}`;
-	} );
-
-	return css;
-}
-
-function buildResponsiveStyles( uniqueId, attributes ) {
-	const { tabletPadding, mobilePadding } = attributes;
-
-	const selector = `#buttercup-rl-${ uniqueId }`;
-	let tabletCss = '';
-	let mobileCss = '';
-
-	if ( tabletPadding && tabletPadding.length === 4 ) {
-		tabletCss += `${ selector }{padding:${ tabletPadding[ 0 ] }px ${ tabletPadding[ 1 ] }px ${ tabletPadding[ 2 ] }px ${ tabletPadding[ 3 ] }px}`;
-	}
-
-	if ( mobilePadding && mobilePadding.length === 4 ) {
-		mobileCss += `${ selector }{padding:${ mobilePadding[ 0 ] }px ${ mobilePadding[ 1 ] }px ${ mobilePadding[ 2 ] }px ${ mobilePadding[ 3 ] }px}`;
-	}
-
-	let css = '';
-	if ( tabletCss ) {
-		css += `@media(max-width:1024px){${ tabletCss }}`;
-	}
-	if ( mobileCss ) {
-		css += `@media(max-width:767px){${ mobileCss }}`;
-	}
-	return css;
-}
-
 export default function save( { attributes } ) {
 	const {
 		uniqueId,
@@ -110,7 +61,9 @@ export default function save( { attributes } ) {
 		reverseOnMobile,
 		reverseOnTablet,
 		tabletLayout,
+		tabletPadding,
 		mobileLayout,
+		mobilePadding,
 	} = attributes;
 
 	const wrapperClasses = [
@@ -129,10 +82,29 @@ export default function save( { attributes } ) {
 		.filter( Boolean )
 		.join( ' ' );
 
+	const widths = getColumnWidths( columns, columnLayout, columnWidths );
+	const gapOffset =
+		columns > 1 ? ( ( columns - 1 ) * columnGap ) / columns : 0;
 	const wrapperStyle = {};
+	wrapperStyle[ '--rl-gap-offset' ] = `${ gapOffset }px`;
+	widths.forEach( ( width, index ) => {
+		wrapperStyle[ `--rl-col-${ index + 1 }` ] = `${ width }%`;
+	} );
 
 	if ( paddingTop || paddingRight || paddingBottom || paddingLeft ) {
 		wrapperStyle.padding = `${ paddingTop }px ${ paddingRight }px ${ paddingBottom }px ${ paddingLeft }px`;
+	}
+	if ( tabletPadding && tabletPadding.length === 4 ) {
+		wrapperStyle[ '--rl-tablet-pt' ] = `${ tabletPadding[ 0 ] }px`;
+		wrapperStyle[ '--rl-tablet-pr' ] = `${ tabletPadding[ 1 ] }px`;
+		wrapperStyle[ '--rl-tablet-pb' ] = `${ tabletPadding[ 2 ] }px`;
+		wrapperStyle[ '--rl-tablet-pl' ] = `${ tabletPadding[ 3 ] }px`;
+	}
+	if ( mobilePadding && mobilePadding.length === 4 ) {
+		wrapperStyle[ '--rl-mobile-pt' ] = `${ mobilePadding[ 0 ] }px`;
+		wrapperStyle[ '--rl-mobile-pr' ] = `${ mobilePadding[ 1 ] }px`;
+		wrapperStyle[ '--rl-mobile-pb' ] = `${ mobilePadding[ 2 ] }px`;
+		wrapperStyle[ '--rl-mobile-pl' ] = `${ mobilePadding[ 3 ] }px`;
 	}
 	if ( marginTop ) {
 		wrapperStyle.marginTop = `${ marginTop }px`;
@@ -189,15 +161,6 @@ export default function save( { attributes } ) {
 		.filter( Boolean )
 		.join( ' ' );
 
-	let inlineCss = buildColumnStyles(
-		uniqueId,
-		columns,
-		columnLayout,
-		columnWidths,
-		columnGap
-	);
-	inlineCss += buildResponsiveStyles( uniqueId, attributes );
-
 	const hasOverlay = overlayColor || overlayGradient;
 	const overlayStyle = {};
 	if ( overlayColor && ! overlayGradient ) {
@@ -216,9 +179,6 @@ export default function save( { attributes } ) {
 
 	return (
 		<div { ...blockProps }>
-			{ inlineCss && (
-				<style dangerouslySetInnerHTML={ { __html: inlineCss } } />
-			) }
 			{ backgroundVideoUrl && (
 				<video
 					className="buttercup-row-layout__video"

@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef, useState } from '@wordpress/element';
 import { cleanForSlug } from '@wordpress/url';
 import apiFetch from '@wordpress/api-fetch';
 import ServerSideRender from '@wordpress/server-side-render';
+import { buildHomepageFeedStatusQuery } from '../shared/rest-query-utils';
 
 function countHomepageFeedBlocks( blocks ) {
 	let count = 0;
@@ -129,7 +130,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				: null;
 
 		const timer = setTimeout( () => {
-			const query = new URLSearchParams( {
+			const query = buildHomepageFeedStatusQuery( {
 				mastTagSlug: mast,
 				homeTagSlug: home,
 			} );

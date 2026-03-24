@@ -5,6 +5,7 @@
 	"main": "index.js",
 	"files": [
 		"buttercup.php",
+		"includes",
 		"build",
 		"assets/homepage-meta.js",
 		"LICENSE"

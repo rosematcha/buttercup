@@ -18,8 +18,18 @@ import {
 import { useSelect, useDispatch, resolveSelect } from '@wordpress/data';
 import apiFetch from '@wordpress/api-fetch';
 import { createBlock } from '@wordpress/blocks';
-import { useEffect, useState, useRef } from '@wordpress/element';
-import { cleanForSlug } from '@wordpress/url';
+import { useEffect, useState, useRef, useMemo } from '@wordpress/element';
+import {
+	buildSrcSetFromMedia,
+	pickBestCandidate,
+} from '../shared/media-image-utils';
+import {
+	collectAllTeamMembers,
+	collectTeamBlocks,
+	getTeamMembersFromBlock,
+	stripHtmlText,
+} from '../shared/block-tree-utils';
+import { buildMemberSlugAssignments } from '../shared/member-slug-utils';
 
 const ALLOWED_BLOCKS = [ 'buttercup/team-member' ];
 
@@ -101,6 +111,14 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		( select ) => select( blockEditorStore ).getBlocks(),
 		[]
 	);
+	const teamBlocks = useMemo(
+		() => collectTeamBlocks( allBlocks ),
+		[ allBlocks ]
+	);
+	const allTeamMembers = useMemo(
+		() => collectAllTeamMembers( allBlocks ),
+		[ allBlocks ]
+	);
 
 	const { replaceInnerBlocks, updateBlockAttributes } =
 		useDispatch( blockEditorStore );
@@ -112,22 +130,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	const memberCount = innerBlocks.length;
 
 	useEffect( () => {
-		if ( ! allBlocks.length ) {
+		if ( ! teamBlocks.length ) {
 			return;
 		}
-
-		const teamBlocks = [];
-		const collectTeamBlocks = ( blocks ) => {
-			blocks.forEach( ( block ) => {
-				if ( block.name === 'buttercup/team' ) {
-					teamBlocks.push( block );
-				}
-				if ( block.innerBlocks?.length ) {
-					collectTeamBlocks( block.innerBlocks );
-				}
-			} );
-		};
-		collectTeamBlocks( allBlocks );
 
 		const signatureParts = [];
 		teamBlocks.forEach( ( teamBlock ) => {
@@ -137,13 +142,13 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				`${ teamBlock.clientId }:${ teamEnabled ? '1' : '0' }`
 			);
 
-			( teamBlock.innerBlocks || [] ).forEach( ( memberBlock ) => {
+			getTeamMembersFromBlock( teamBlock ).forEach( ( memberBlock ) => {
 				if ( memberBlock.name !== 'buttercup/team-member' ) {
 					return;
 				}
-				const rawName = ( memberBlock.attributes?.name || '' )
-					.replace( /<[^>]*>/g, '' )
-					.trim();
+				const rawName = stripHtmlText(
+					memberBlock.attributes?.name || ''
+				);
 				const memberDisabled =
 					memberBlock.attributes?.disableMemberPage === true;
 				signatureParts.push(
@@ -165,9 +170,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		teamBlocks.forEach( ( teamBlock ) => {
 			const teamEnabled =
 				teamBlock.attributes?.enableMemberPages !== false;
-			const members = ( teamBlock.innerBlocks || [] ).filter(
-				( block ) => block.name === 'buttercup/team-member'
-			);
+			const members = getTeamMembersFromBlock( teamBlock );
 
 			members.forEach( ( member ) => {
 				const memberDisabled =
@@ -180,48 +183,20 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			} );
 		} );
 
-		const counts = {};
-		const parts = enabledMembers.map( ( block ) => {
-			const rawName = ( block.attributes?.name || '' )
-				.replace( /<[^>]*>/g, '' )
-				.trim();
-			const tokens = rawName.split( /\s+/ ).filter( Boolean );
-			const first = tokens[ 0 ] || '';
-			const last = tokens.length > 1 ? tokens[ tokens.length - 1 ] : '';
-			const key = first.toLowerCase();
-			if ( key ) {
-				counts[ key ] = ( counts[ key ] || 0 ) + 1;
-			}
-			return { block, first, last };
-		} );
+		const slugAssignments = buildMemberSlugAssignments(
+			enabledMembers.map( ( block ) => ( {
+				clientId: block.clientId,
+				name: block.attributes?.name || '',
+				memberSlug: block.attributes?.memberSlug || '',
+			} ) )
+		);
 
-		const used = {};
 		enabledMembers.forEach( ( block ) => {
-			const existingSlug = ( block.attributes?.memberSlug || '' ).trim();
-			if ( existingSlug ) {
-				used[ existingSlug ] = true;
-			}
-		} );
-
-		parts.forEach( ( { block, first, last } ) => {
 			const existingSlug = ( block.attributes?.memberSlug || '' ).trim();
 			const nextAttrs = {};
 
-			if ( ! existingSlug && first ) {
-				const needsLast = counts[ first.toLowerCase() ] > 1;
-				const base = needsLast && last ? `${ first } ${ last }` : first;
-				let slug = base ? cleanForSlug( base ) : '';
-				if ( slug ) {
-					let unique = slug;
-					let i = 2;
-					while ( used[ unique ] ) {
-						unique = `${ slug }-${ i }`;
-						i += 1;
-					}
-					used[ unique ] = true;
-					slug = unique;
-				}
-				nextAttrs.memberSlug = slug;
+			if ( ! existingSlug && slugAssignments[ block.clientId ] ) {
+				nextAttrs.memberSlug = slugAssignments[ block.clientId ];
 			}
 
 			if ( block.attributes?.memberPagesEnabled !== true ) {
@@ -242,16 +217,16 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				updateBlockAttributes( block.clientId, nextAttrs );
 			}
 		} );
-	}, [ allBlocks, updateBlockAttributes ] );
+	}, [ teamBlocks, updateBlockAttributes ] );
 
 	const sortBlocks = ( key ) => {
 		const sorted = [ ...innerBlocks ].sort( ( a, b ) => {
-			const valA = ( a.attributes[ key ] || '' )
-				.replace( /<[^>]*>/g, '' )
-				.toLowerCase();
-			const valB = ( b.attributes[ key ] || '' )
-				.replace( /<[^>]*>/g, '' )
-				.toLowerCase();
+			const valA = stripHtmlText(
+				a.attributes[ key ] || ''
+			).toLowerCase();
+			const valB = stripHtmlText(
+				b.attributes[ key ] || ''
+			).toLowerCase();
 			return valA.localeCompare( valB );
 		} );
 		replaceInnerBlocks( clientId, sorted, false );
@@ -284,104 +259,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		setAttributes( TEAM_LAYOUT_DEFAULTS );
 	};
 
-	const getMediaSizeCandidates = ( mediaItem ) => {
-		if ( ! mediaItem ) {
-			return [];
-		}
-		const sizes = mediaItem.media_details?.sizes || mediaItem.sizes || {};
-		const candidates = Object.values( sizes )
-			.map( ( size ) => ( {
-				url: size?.source_url || size?.url,
-				width: size?.width,
-				height: size?.height,
-			} ) )
-			.filter( ( size ) => size.url && size.width );
-		if ( mediaItem.source_url && mediaItem.media_details?.width ) {
-			candidates.push( {
-				url: mediaItem.source_url,
-				width: mediaItem.media_details.width,
-				height: mediaItem.media_details.height,
-			} );
-		}
-		return candidates;
-	};
-
-	const filterByAspectRatio = ( candidates, mediaItem ) => {
-		const originalWidth = mediaItem?.media_details?.width || 0;
-		const originalHeight = mediaItem?.media_details?.height || 0;
-		if ( ! originalWidth || ! originalHeight ) {
-			return candidates;
-		}
-		const originalRatio = originalWidth / originalHeight;
-		const ratioTolerance = 0.08;
-
-		return candidates.filter( ( item ) => {
-			if ( ! item.width || ! item.height ) {
-				return false;
-			}
-			const ratio = item.width / item.height;
-			if ( Math.abs( originalRatio - 1 ) <= 0.05 ) {
-				return true;
-			}
-			return (
-				Math.abs( ratio - originalRatio ) / originalRatio <=
-				ratioTolerance
-			);
-		} );
-	};
-
-	const filterOutCropped = ( candidates, mediaItem ) => {
-		const sizes = mediaItem?.media_details?.sizes || mediaItem?.sizes || {};
-		const cropMap = new Map();
-		Object.values( sizes ).forEach( ( size ) => {
-			const url = size?.source_url || size?.url;
-			if ( ! url ) {
-				return;
-			}
-			cropMap.set( url, !! size?.crop );
-		} );
-		return candidates.filter( ( item ) => ! cropMap.get( item.url ) );
-	};
-
-	const buildSrcSet = ( mediaItem ) => {
-		const candidates = filterOutCropped(
-			filterByAspectRatio(
-				getMediaSizeCandidates( mediaItem ),
-				mediaItem
-			),
-			mediaItem
-		);
-		const seen = new Set();
-		return candidates
-			.filter( ( item ) => {
-				if ( seen.has( item.url ) ) {
-					return false;
-				}
-				seen.add( item.url );
-				return true;
-			} )
-			.sort( ( a, b ) => a.width - b.width )
-			.map( ( item ) => `${ item.url } ${ item.width }w` )
-			.join( ', ' );
-	};
-
-	const pickBestUrl = ( mediaItem, targetWidth ) => {
-		const candidates = filterOutCropped(
-			filterByAspectRatio(
-				getMediaSizeCandidates( mediaItem ),
-				mediaItem
-			),
-			mediaItem
-		).sort( ( a, b ) => a.width - b.width );
-		if ( ! candidates.length ) {
-			return { url: mediaItem?.url || '', width: 0, height: 0 };
-		}
-		const match =
-			candidates.find( ( item ) => item.width >= targetWidth ) ||
-			candidates[ candidates.length - 1 ];
-		return match;
-	};
-
 	const refreshMemberImages = async () => {
 		if ( isRefreshingImages ) {
 			return;
@@ -389,34 +266,54 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		setIsRefreshingImages( true );
 		setRefreshImagesNote( '' );
 
-		const members = innerBlocks.filter(
-			( block ) => block.name === 'buttercup/team-member'
-		);
+		const members = teamMembers;
 		let updated = 0;
 		let missing = 0;
 		const target = imageSize || 120;
+		const membersWithImage = members.filter(
+			( member ) => !! member.attributes?.profileImageId
+		);
+		const uniqueImageIds = Array.from(
+			new Set(
+				membersWithImage.map( ( member ) =>
+					Number( member.attributes?.profileImageId || 0 )
+				)
+			)
+		).filter( Boolean );
 
-		for ( const member of members ) {
-			const imageId = member.attributes?.profileImageId;
-			if ( ! imageId ) {
-				continue;
-			}
-			const mediaItem = await resolveSelect( 'core' ).getMedia( imageId );
+		const mediaEntries = await Promise.all(
+			uniqueImageIds.map( async ( imageId ) => [
+				imageId,
+				await resolveSelect( 'core' ).getMedia( imageId ),
+			] )
+		);
+		const mediaById = new Map( mediaEntries );
+
+		const squareEntries = await Promise.all(
+			uniqueImageIds.map( async ( imageId ) => {
+				try {
+					const square = await apiFetch( {
+						path: '/buttercup/v1/square-image',
+						method: 'POST',
+						data: { id: imageId },
+					} );
+					return [ imageId, square ];
+				} catch ( e ) {
+					return [ imageId, null ];
+				}
+			} )
+		);
+		const squareById = new Map( squareEntries );
+
+		membersWithImage.forEach( ( member ) => {
+			const imageId = Number( member.attributes?.profileImageId || 0 );
+			const mediaItem = mediaById.get( imageId );
 			if ( ! mediaItem ) {
 				missing += 1;
-				continue;
-			}
-			let square = null;
-			try {
-				square = await apiFetch( {
-					path: '/buttercup/v1/square-image',
-					method: 'POST',
-					data: { id: imageId },
-				} );
-			} catch ( e ) {
-				square = null;
+				return;
 			}
 
+			const square = squareById.get( imageId );
 			const alt = mediaItem?.alt_text || mediaItem?.alt || '';
 			const sizes = `${ target }px`;
 
@@ -430,24 +327,26 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					profileImageHeight: square.height || 600,
 					profileImageSource: 'square-600',
 				} );
-			} else {
-				const best = pickBestUrl( mediaItem, target );
-				const srcSet = buildSrcSet( mediaItem );
-				updateBlockAttributes( member.clientId, {
-					profileImageUrl:
-						best.url || mediaItem.url || mediaItem.source_url || '',
-					profileImageAlt: alt,
-					profileImageSrcSet: srcSet,
-					profileImageSizes: sizes,
-					profileImageWidth:
-						best.width || mediaItem.media_details?.width || 0,
-					profileImageHeight:
-						best.height || mediaItem.media_details?.height || 0,
-					profileImageSource: 'auto',
-				} );
+				updated += 1;
+				return;
 			}
+
+			const best = pickBestCandidate( mediaItem, target );
+			const srcSet = buildSrcSetFromMedia( mediaItem );
+			updateBlockAttributes( member.clientId, {
+				profileImageUrl:
+					best.url || mediaItem.url || mediaItem.source_url || '',
+				profileImageAlt: alt,
+				profileImageSrcSet: srcSet,
+				profileImageSizes: sizes,
+				profileImageWidth:
+					best.width || mediaItem.media_details?.width || 0,
+				profileImageHeight:
+					best.height || mediaItem.media_details?.height || 0,
+				profileImageSource: 'auto',
+			} );
 			updated += 1;
-		}
+		} );
 
 		if ( updated || missing ) {
 			const note = missing
@@ -1123,47 +1022,16 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 									<Button
 										variant="secondary"
 										onClick={ () => {
-											const members = [];
-											const collect = ( blocks ) => {
-												blocks.forEach( ( block ) => {
-													if (
-														block.name ===
-														'buttercup/team'
-													) {
-														(
-															block.innerBlocks ||
-															[]
-														).forEach(
-															( inner ) => {
-																if (
-																	inner.name !==
-																	'buttercup/team-member'
-																) {
-																	return;
-																}
-																members.push(
-																	inner
-																);
-															}
-														);
-													}
-													if (
-														block.innerBlocks
-															?.length
-													) {
-														collect(
-															block.innerBlocks
-														);
-													}
-												} );
-											};
-											collect( allBlocks );
-											members.forEach( ( member ) => {
-												updateBlockAttributes(
-													member.clientId,
-													{ memberSlug: '' }
-												);
-											} );
+											allTeamMembers.forEach(
+												( member ) => {
+													updateBlockAttributes(
+														member.clientId,
+														{
+															memberSlug: '',
+														}
+													);
+												}
+											);
 										} }
 									>
 										{ __(

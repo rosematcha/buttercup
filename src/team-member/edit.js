@@ -25,6 +25,14 @@ import { cloneBlock } from '@wordpress/blocks';
 import { useEffect, useMemo, useState } from '@wordpress/element';
 import { cleanForSlug } from '@wordpress/url';
 import apiFetch from '@wordpress/api-fetch';
+import {
+	buildSrcSetFromMedia,
+	pickBestCandidate,
+} from '../shared/media-image-utils';
+import {
+	collectTeamBlocks,
+	getTeamMembersFromBlock,
+} from '../shared/block-tree-utils';
 
 export default function Edit( {
 	attributes,
@@ -88,39 +96,30 @@ export default function Edit( {
 			profileImageId ? select( 'core' ).getMedia( profileImageId ) : null,
 		[ profileImageId ]
 	);
+	const teamBlocks = useMemo(
+		() => collectTeamBlocks( allBlocks ),
+		[ allBlocks ]
+	);
 
 	const slugCounts = useMemo( () => {
 		const counts = {};
-		const collect = ( blocks ) => {
-			blocks.forEach( ( block ) => {
-				if ( block.name === 'buttercup/team' ) {
-					const teamEnabled =
-						block.attributes?.enableMemberPages !== false;
-					if ( teamEnabled ) {
-						( block.innerBlocks || [] ).forEach( ( inner ) => {
-							if ( inner.name !== 'buttercup/team-member' ) {
-								return;
-							}
-							if ( inner.attributes?.disableMemberPage ) {
-								return;
-							}
-							const slug = (
-								inner.attributes?.memberSlug || ''
-							).trim();
-							if ( slug ) {
-								counts[ slug ] = ( counts[ slug ] || 0 ) + 1;
-							}
-						} );
-					}
+		teamBlocks.forEach( ( block ) => {
+			const teamEnabled = block.attributes?.enableMemberPages !== false;
+			if ( ! teamEnabled ) {
+				return;
+			}
+			getTeamMembersFromBlock( block ).forEach( ( inner ) => {
+				if ( inner.attributes?.disableMemberPage ) {
+					return;
 				}
-				if ( block.innerBlocks?.length ) {
-					collect( block.innerBlocks );
+				const slug = ( inner.attributes?.memberSlug || '' ).trim();
+				if ( slug ) {
+					counts[ slug ] = ( counts[ slug ] || 0 ) + 1;
 				}
 			} );
-		};
-		collect( allBlocks );
+		} );
 		return counts;
-	}, [ allBlocks ] );
+	}, [ teamBlocks ] );
 
 	const slugDuplicate = memberSlug && slugCounts[ memberSlug ] > 1;
 	const baseUrl = permalink
@@ -176,105 +175,6 @@ export default function Edit( {
 		} );
 	};
 
-	/* ── Image helpers ── */
-	const getMediaSizeCandidates = ( mediaItem ) => {
-		if ( ! mediaItem ) {
-			return [];
-		}
-		const sizes = mediaItem.media_details?.sizes || mediaItem.sizes || {};
-		const candidates = Object.values( sizes )
-			.map( ( size ) => ( {
-				url: size?.source_url || size?.url,
-				width: size?.width,
-				height: size?.height,
-			} ) )
-			.filter( ( size ) => size.url && size.width );
-		if ( mediaItem.source_url && mediaItem.media_details?.width ) {
-			candidates.push( {
-				url: mediaItem.source_url,
-				width: mediaItem.media_details.width,
-				height: mediaItem.media_details.height,
-			} );
-		}
-		return candidates;
-	};
-
-	const filterByAspectRatio = ( candidates, mediaItem ) => {
-		const originalWidth = mediaItem?.media_details?.width || 0;
-		const originalHeight = mediaItem?.media_details?.height || 0;
-		if ( ! originalWidth || ! originalHeight ) {
-			return candidates;
-		}
-		const originalRatio = originalWidth / originalHeight;
-		const ratioTolerance = 0.08;
-
-		return candidates.filter( ( item ) => {
-			if ( ! item.width || ! item.height ) {
-				return false;
-			}
-			const ratio = item.width / item.height;
-			if ( Math.abs( originalRatio - 1 ) <= 0.05 ) {
-				return true;
-			}
-			return (
-				Math.abs( ratio - originalRatio ) / originalRatio <=
-				ratioTolerance
-			);
-		} );
-	};
-
-	const filterOutCropped = ( candidates, mediaItem ) => {
-		const sizes = mediaItem?.media_details?.sizes || mediaItem?.sizes || {};
-		const cropMap = new Map();
-		Object.values( sizes ).forEach( ( size ) => {
-			const url = size?.source_url || size?.url;
-			if ( ! url ) {
-				return;
-			}
-			cropMap.set( url, !! size?.crop );
-		} );
-		return candidates.filter( ( item ) => ! cropMap.get( item.url ) );
-	};
-
-	const buildSrcSet = ( mediaItem ) => {
-		const candidates = filterOutCropped(
-			filterByAspectRatio(
-				getMediaSizeCandidates( mediaItem ),
-				mediaItem
-			),
-			mediaItem
-		);
-		const seen = new Set();
-		return candidates
-			.filter( ( item ) => {
-				if ( seen.has( item.url ) ) {
-					return false;
-				}
-				seen.add( item.url );
-				return true;
-			} )
-			.sort( ( a, b ) => a.width - b.width )
-			.map( ( item ) => `${ item.url } ${ item.width }w` )
-			.join( ', ' );
-	};
-
-	const pickBestUrl = ( mediaItem, targetWidth ) => {
-		const candidates = filterOutCropped(
-			filterByAspectRatio(
-				getMediaSizeCandidates( mediaItem ),
-				mediaItem
-			),
-			mediaItem
-		).sort( ( a, b ) => a.width - b.width );
-		if ( ! candidates.length ) {
-			return { url: mediaItem?.url || '', width: 0, height: 0 };
-		}
-		const match =
-			candidates.find( ( item ) => item.width >= targetWidth ) ||
-			candidates[ candidates.length - 1 ];
-		return match;
-	};
-
 	const requestSquareImage = async ( imageId ) => {
 		try {
 			return await apiFetch( {
@@ -306,8 +206,8 @@ export default function Edit( {
 			return;
 		}
 
-		const best = pickBestUrl( mediaItem, target );
-		const srcSet = buildSrcSet( mediaItem );
+		const best = pickBestCandidate( mediaItem, target );
+		const srcSet = buildSrcSetFromMedia( mediaItem );
 		const sizes = `${ target }px`;
 		setAttributes( {
 			profileImageId: mediaItem.id,
@@ -331,8 +231,8 @@ export default function Edit( {
 			return;
 		}
 		const target = imageSize || 600;
-		const best = pickBestUrl( media, target );
-		const srcSet = buildSrcSet( media );
+		const best = pickBestCandidate( media, target );
+		const srcSet = buildSrcSetFromMedia( media );
 		const alt = media?.alt_text || media?.alt || '';
 		const sizes = `${ target }px`;
 		const nextAttrs = {};
