@@ -446,11 +446,46 @@ function buttercup_render_homepage_feed($attributes)
 
     $mast_tag_slug = isset($attributes['mastTagSlug']) ? $attributes['mastTagSlug'] : 'mast';
     $home_tag_slug = isset($attributes['homeTagSlug']) ? $attributes['homeTagSlug'] : 'home';
+    $render_mode = isset($attributes['renderMode']) ? (string) $attributes['renderMode'] : 'all';
+    $home_position = isset($attributes['homePosition']) ? max(1, intval($attributes['homePosition'])) : 1;
 
     $feed = buttercup_homepage_feed_collect($mast_tag_slug, $home_tag_slug);
     $mast_post = $feed['mast_selected'];
     $home_posts = $feed['home_selected'];
 
+    if ($render_mode === 'mast') {
+        if (!$mast_post) {
+            return '';
+        }
+        $mast_html = buttercup_homepage_feed_render_item($mast_post, $cta_label, true);
+        if ($mast_html === '') {
+            return '';
+        }
+        $should_detach_mast = buttercup_homepage_feed_should_detach_mast();
+        if ($should_detach_mast) {
+            $classes = ['wp-block-buttercup-homepage-feed', 'buttercup-homepage-feed', 'buttercup-homepage-feed--mast'];
+            $mast_section_html = '<section class="' . esc_attr(implode(' ', $classes)) . '">' . $mast_html . '</section>';
+            buttercup_homepage_feed_store_detached_mast_html($mast_section_html);
+            return '';
+        }
+        $classes = ['wp-block-buttercup-homepage-feed', 'buttercup-homepage-feed', 'buttercup-homepage-feed--mast'];
+        return '<section class="' . esc_attr(implode(' ', $classes)) . '">' . $mast_html . '</section>';
+    }
+
+    if ($render_mode === 'home-item') {
+        $index = $home_position - 1;
+        if (!isset($home_posts[$index])) {
+            return '';
+        }
+        $item_html = buttercup_homepage_feed_render_item($home_posts[$index], $cta_label, false);
+        if ($item_html === '') {
+            return '';
+        }
+        $classes = ['wp-block-buttercup-homepage-feed', 'buttercup-homepage-feed', 'buttercup-homepage-feed--home-item'];
+        return '<section class="' . esc_attr(implode(' ', $classes)) . '">' . $item_html . '</section>';
+    }
+
+    // Default: render_mode === 'all'
     if (!$mast_post && empty($home_posts)) {
         return '';
     }

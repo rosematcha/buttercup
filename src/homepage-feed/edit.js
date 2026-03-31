@@ -11,12 +11,15 @@ import {
 	Spinner,
 	FormTokenField,
 	Button,
+	SelectControl,
+	RangeControl,
 } from '@wordpress/components';
-import { useSelect } from '@wordpress/data';
+import { useSelect, useDispatch } from '@wordpress/data';
 import { useEffect, useMemo, useRef, useState } from '@wordpress/element';
 import { cleanForSlug } from '@wordpress/url';
 import apiFetch from '@wordpress/api-fetch';
 import ServerSideRender from '@wordpress/server-side-render';
+import { createBlock } from '@wordpress/blocks';
 import { buildHomepageFeedStatusQuery } from '../shared/rest-query-utils';
 
 function countHomepageFeedBlocks( blocks ) {
@@ -65,13 +68,35 @@ function getTagCountHint( input, fallback, tagCounts ) {
 	return `${ __( 'Using default', 'buttercup' ) }: ${ fallback }`;
 }
 
-export default function Edit( { attributes, setAttributes } ) {
-	const { ctaLabel, homeTagSlug, mastTagSlug } = attributes;
+export default function Edit( { attributes, setAttributes, clientId } ) {
+	const { ctaLabel, homeTagSlug, mastTagSlug, renderMode, homePosition } =
+		attributes;
+
+	const { replaceBlock } = useDispatch( blockEditorStore );
 
 	const allBlocks = useSelect(
 		( select ) => select( blockEditorStore ).getBlocks(),
 		[]
 	);
+
+	const isFrontPage = useSelect( ( select ) => {
+		const editor = select( 'core/editor' );
+		if ( ! editor ) {
+			return false;
+		}
+		const postId = editor.getCurrentPostId();
+		const siteSettings = select( 'core' ).getEntityRecord(
+			'root',
+			'site'
+		);
+		if ( ! siteSettings ) {
+			return false;
+		}
+		return (
+			siteSettings.show_on_front === 'page' &&
+			siteSettings.page_on_front === postId
+		);
+	}, [] );
 
 	const tags = useSelect(
 		( select ) =>
@@ -113,6 +138,36 @@ export default function Edit( { attributes, setAttributes } ) {
 	) } ${ __( 'mast item(s) and', 'buttercup' ) } ${ Number(
 		status?.homeCount || 0
 	) } ${ __( 'home item(s).', 'buttercup' ) }`;
+
+	const homeItemCount = status?.homeSelected?.length || 0;
+
+	function expandToIndividualBlocks() {
+		const sharedAttrs = {
+			ctaLabel,
+			homeTagSlug: normalizeSlug( homeTagSlug, 'home' ),
+			mastTagSlug: normalizeSlug( mastTagSlug, 'mast' ),
+		};
+
+		const blocks = [
+			createBlock( 'buttercup/homepage-feed', {
+				...sharedAttrs,
+				renderMode: 'mast',
+			} ),
+		];
+
+		const count = Math.max( homeItemCount, 1 );
+		for ( let i = 1; i <= count; i++ ) {
+			blocks.push(
+				createBlock( 'buttercup/homepage-feed', {
+					...sharedAttrs,
+					renderMode: 'home-item',
+					homePosition: i,
+				} )
+			);
+		}
+
+		replaceBlock( clientId, blocks );
+	}
 
 	useEffect( () => {
 		const mast = normalizeSlug( mastTagSlug, 'mast' );
@@ -180,6 +235,56 @@ export default function Edit( { attributes, setAttributes } ) {
 	return (
 		<>
 			<InspectorControls>
+				<PanelBody title={ __( 'Render Mode', 'buttercup' ) }>
+					<SelectControl
+						label={ __( 'What to render', 'buttercup' ) }
+						value={ renderMode || 'all' }
+						options={ [
+							{
+								label: __(
+									'All (mast + home items)',
+									'buttercup'
+								),
+								value: 'all',
+							},
+							{
+								label: __( 'Mast only', 'buttercup' ),
+								value: 'mast',
+							},
+							{
+								label: __(
+									'Single home item',
+									'buttercup'
+								),
+								value: 'home-item',
+							},
+						] }
+						onChange={ ( value ) =>
+							setAttributes( { renderMode: value } )
+						}
+						help={ __(
+							'Use "Single home item" to place individual home-tagged items anywhere on the page.',
+							'buttercup'
+						) }
+						__nextHasNoMarginBottom
+					/>
+					{ renderMode === 'home-item' && (
+						<RangeControl
+							label={ __( 'Home item position', 'buttercup' ) }
+							value={ homePosition || 1 }
+							onChange={ ( value ) =>
+								setAttributes( { homePosition: value } )
+							}
+							min={ 1 }
+							max={ 5 }
+							help={ __(
+								'Which home item to render (1 = newest, up to 5).',
+								'buttercup'
+							) }
+							__nextHasNoMarginBottom
+						/>
+					) }
+				</PanelBody>
 				<PanelBody title={ __( 'Feed Settings', 'buttercup' ) }>
 					<TextControl
 						label={ __( 'CTA Label', 'buttercup' ) }
@@ -193,24 +298,33 @@ export default function Edit( { attributes, setAttributes } ) {
 						) }
 						__nextHasNoMarginBottom
 					/>
-					<FormTokenField
-						label={ __( 'Mast Tag Slug', 'buttercup' ) }
-						value={ mastTagSlug ? [ mastTagSlug ] : [] }
-						onChange={ ( tokens ) =>
-							setAttributes( {
-								mastTagSlug: normalizeTokenSlug( tokens ),
-							} )
-						}
-						suggestions={ tagSuggestions }
-						help={ __(
-							'Type or select a tag slug. Custom values are allowed.',
-							'buttercup'
-						) }
-						__nextHasNoMarginBottom
-					/>
-					<p className="buttercup-homepage-feed-editor__tag-hint">
-						{ getTagCountHint( mastTagSlug, 'mast', tagCounts ) }
-					</p>
+					{ renderMode !== 'home-item' && (
+						<FormTokenField
+							label={ __( 'Mast Tag Slug', 'buttercup' ) }
+							value={ mastTagSlug ? [ mastTagSlug ] : [] }
+							onChange={ ( tokens ) =>
+								setAttributes( {
+									mastTagSlug:
+										normalizeTokenSlug( tokens ),
+								} )
+							}
+							suggestions={ tagSuggestions }
+							help={ __(
+								'Type or select a tag slug. Custom values are allowed.',
+								'buttercup'
+							) }
+							__nextHasNoMarginBottom
+						/>
+					) }
+					{ renderMode !== 'home-item' && (
+						<p className="buttercup-homepage-feed-editor__tag-hint">
+							{ getTagCountHint(
+								mastTagSlug,
+								'mast',
+								tagCounts
+							) }
+						</p>
+					) }
 					<FormTokenField
 						label={ __( 'Home Tag Slug', 'buttercup' ) }
 						value={ homeTagSlug ? [ homeTagSlug ] : [] }
@@ -232,15 +346,32 @@ export default function Edit( { attributes, setAttributes } ) {
 				</PanelBody>
 			</InspectorControls>
 			<div { ...blockProps }>
-				<h3>{ __( 'Homepage Feed', 'buttercup' ) }</h3>
+				<h3>
+					{ renderMode === 'mast'
+						? __( 'Homepage Feed — Mast', 'buttercup' )
+						: renderMode === 'home-item'
+						? __( 'Homepage Feed — Home Item #', 'buttercup' ) +
+						  ( homePosition || 1 )
+						: __( 'Homepage Feed', 'buttercup' ) }
+				</h3>
 				<p className="buttercup-homepage-feed-editor__summary">
-					{ __(
-						'Renders one mast item and up to five home items from tagged posts/pages.',
-						'buttercup'
-					) }
+					{ renderMode === 'mast'
+						? __(
+								'Renders the mast item from tagged posts/pages.',
+								'buttercup'
+						  )
+						: renderMode === 'home-item'
+						? __(
+								'Renders a single home item. Use multiple blocks to place home items independently.',
+								'buttercup'
+						  )
+						: __(
+								'Renders one mast item and up to five home items from tagged posts/pages.',
+								'buttercup'
+						  ) }
 				</p>
 
-				{ blockCount > 1 && (
+				{ blockCount > 1 && renderMode === 'all' && (
 					<Notice status="warning" isDismissible={ false }>
 						{ __(
 							'Use only one Homepage Feed block per page to avoid duplicate mast/home content.',
@@ -248,6 +379,29 @@ export default function Edit( { attributes, setAttributes } ) {
 						) }
 					</Notice>
 				) }
+
+				{ isFrontPage &&
+					renderMode === 'all' &&
+					! isLoading &&
+					homeItemCount > 0 && (
+						<Notice status="info" isDismissible={ false }>
+							<p>
+								{ __(
+									'This is the homepage. Split this block into individually reorderable items so you can place each home column anywhere on the page.',
+									'buttercup'
+								) }
+							</p>
+							<Button
+								variant="primary"
+								onClick={ expandToIndividualBlocks }
+							>
+								{ __(
+									'Split into individual items',
+									'buttercup'
+								) }
+							</Button>
+						</Notice>
+					) }
 
 				{ errorMessage && (
 					<Notice status="error" isDismissible={ false }>
@@ -410,6 +564,8 @@ export default function Edit( { attributes, setAttributes } ) {
 										homeTagSlug,
 										'home'
 									),
+									renderMode: renderMode || 'all',
+									homePosition: homePosition || 1,
 								} }
 								httpMethod="GET"
 								skipBlockSupportAttributes

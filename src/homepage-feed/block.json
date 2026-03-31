@@ -27,6 +27,15 @@
 		"mastTagSlug": {
 			"type": "string",
 			"default": "mast"
+		},
+		"renderMode": {
+			"type": "string",
+			"default": "all",
+			"enum": [ "all", "mast", "home-item" ]
+		},
+		"homePosition": {
+			"type": "integer",
+			"default": 1
 		}
 	}
 }
