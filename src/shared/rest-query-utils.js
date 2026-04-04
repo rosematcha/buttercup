@@ -32,6 +32,16 @@ export function buildHomepageFeedStatusQuery( { mastTagSlug, homeTagSlug } ) {
 	} );
 }
 
+export function buildEventsStatusQuery( { displayMode, eventsToShow } ) {
+	const mode = [ 'upcoming', 'past' ].includes( String( displayMode ) )
+		? String( displayMode )
+		: 'upcoming';
+	return new URLSearchParams( {
+		displayMode: mode,
+		eventsToShow: String( sanitizeIntInRange( eventsToShow, 6, 1, 24 ) ),
+	} );
+}
+
 export function buildTagShowcaseStatusQuery( {
 	tagSlugs,
 	tagMatch,

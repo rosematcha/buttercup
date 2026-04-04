@@ -2,7 +2,6 @@ import { __ } from '@wordpress/i18n';
 import {
 	useBlockProps,
 	InspectorControls,
-	store as blockEditorStore,
 } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -11,31 +10,15 @@ import {
 	Spinner,
 	FormTokenField,
 	Button,
-	SelectControl,
-	RangeControl,
 } from '@wordpress/components';
-import { useSelect, useDispatch } from '@wordpress/data';
+import { useSelect } from '@wordpress/data';
 import { useEffect, useMemo, useRef, useState } from '@wordpress/element';
 import { cleanForSlug } from '@wordpress/url';
 import apiFetch from '@wordpress/api-fetch';
 import ServerSideRender from '@wordpress/server-side-render';
-import { createBlock } from '@wordpress/blocks';
 import { buildHomepageFeedStatusQuery } from '../shared/rest-query-utils';
 
-function countHomepageFeedBlocks( blocks ) {
-	let count = 0;
-
-	blocks.forEach( ( block ) => {
-		if ( block.name === 'buttercup/homepage-feed' ) {
-			count += 1;
-		}
-		if ( block.innerBlocks && block.innerBlocks.length ) {
-			count += countHomepageFeedBlocks( block.innerBlocks );
-		}
-	} );
-
-	return count;
-}
+const feedDefaults = window.buttercupDefaults?.feed || {};
 
 function normalizeSlug( value, fallback ) {
 	const slug = cleanForSlug( String( value || '' ).trim() );
@@ -46,57 +29,15 @@ function normalizeTokenSlug( tokens ) {
 	if ( ! Array.isArray( tokens ) || tokens.length === 0 ) {
 		return '';
 	}
-	const last = tokens[ tokens.length - 1 ];
-	return normalizeSlug( last, '' );
+	return normalizeSlug( tokens[ tokens.length - 1 ], '' );
 }
 
-function getTagCountHint( input, fallback, tagCounts ) {
-	const resolvedSlug = normalizeSlug( input, fallback );
-	if ( tagCounts.has( resolvedSlug ) ) {
-		return `${ resolvedSlug }: ${ Number(
-			tagCounts.get( resolvedSlug ) || 0
-		) } ${ __( 'item(s)', 'buttercup' ) }`;
-	}
+export default function Edit( { attributes, setAttributes } ) {
+	const { ctaLabel, homeTagSlug, mastTagSlug, renderMode } = attributes;
 
-	if ( input ) {
-		return `${ resolvedSlug }: ${ __(
-			'custom slug (term not found yet)',
-			'buttercup'
-		) }`;
-	}
-
-	return `${ __( 'Using default', 'buttercup' ) }: ${ fallback }`;
-}
-
-export default function Edit( { attributes, setAttributes, clientId } ) {
-	const { ctaLabel, homeTagSlug, mastTagSlug, renderMode, homePosition } =
-		attributes;
-
-	const { replaceBlock } = useDispatch( blockEditorStore );
-
-	const allBlocks = useSelect(
-		( select ) => select( blockEditorStore ).getBlocks(),
-		[]
-	);
-
-	const isFrontPage = useSelect( ( select ) => {
-		const editor = select( 'core/editor' );
-		if ( ! editor ) {
-			return false;
-		}
-		const postId = editor.getCurrentPostId();
-		const siteSettings = select( 'core' ).getEntityRecord(
-			'root',
-			'site'
-		);
-		if ( ! siteSettings ) {
-			return false;
-		}
-		return (
-			siteSettings.show_on_front === 'page' &&
-			siteSettings.page_on_front === postId
-		);
-	}, [] );
+	const mode = renderMode || 'all';
+	const isMast = mode === 'mast';
+	const isHomeAll = mode === 'home-all';
 
 	const tags = useSelect(
 		( select ) =>
@@ -122,60 +63,13 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		[ tags ]
 	);
 
-	const tagCounts = useMemo( () => {
-		const map = new Map();
-		tags.forEach( ( term ) => {
-			if ( term?.slug ) {
-				map.set( term.slug, Number( term.count ) || 0 );
-			}
-		} );
-		return map;
-	}, [ tags ] );
-
-	const blockCount = countHomepageFeedBlocks( allBlocks );
-	const countsMessage = `${ __( 'Found', 'buttercup' ) } ${ Number(
-		status?.mastCount || 0
-	) } ${ __( 'mast item(s) and', 'buttercup' ) } ${ Number(
-		status?.homeCount || 0
-	) } ${ __( 'home item(s).', 'buttercup' ) }`;
-
-	const homeItemCount = status?.homeSelected?.length || 0;
-
-	function expandToIndividualBlocks() {
-		const sharedAttrs = {
-			ctaLabel,
-			homeTagSlug: normalizeSlug( homeTagSlug, 'home' ),
-			mastTagSlug: normalizeSlug( mastTagSlug, 'mast' ),
-		};
-
-		const blocks = [
-			createBlock( 'buttercup/homepage-feed', {
-				...sharedAttrs,
-				renderMode: 'mast',
-			} ),
-		];
-
-		const count = Math.max( homeItemCount, 1 );
-		for ( let i = 1; i <= count; i++ ) {
-			blocks.push(
-				createBlock( 'buttercup/homepage-feed', {
-					...sharedAttrs,
-					renderMode: 'home-item',
-					homePosition: i,
-				} )
-			);
-		}
-
-		replaceBlock( clientId, blocks );
-	}
-
+	// Fetch status from REST API.
 	useEffect( () => {
-		const mast = normalizeSlug( mastTagSlug, 'mast' );
-		const home = normalizeSlug( homeTagSlug, 'home' );
+		const mast = normalizeSlug( mastTagSlug, feedDefaults.mastTagSlug || 'mast' );
+		const home = normalizeSlug( homeTagSlug, feedDefaults.homeTagSlug || 'home' );
 
 		const requestId = statusRequestRef.current + 1;
 		statusRequestRef.current = requestId;
-
 		setIsLoading( true );
 		setErrorMessage( '' );
 
@@ -213,7 +107,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					setErrorMessage(
 						error?.message ||
 							__(
-								'Unable to load homepage feed status.',
+								'Unable to load feed status.',
 								'buttercup'
 							)
 					);
@@ -232,321 +126,205 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		className: 'buttercup-homepage-feed-editor',
 	} );
 
+	/* ── Derive summary info ── */
+	const mastTitle =
+		! isLoading && status?.mastSelected?.length
+			? status.mastSelected[ 0 ].title
+			: null;
+
+	const homeCount = status?.homeSelected?.length || 0;
+	const homeItems = status?.homeSelected || [];
+
+	/* ── Title and description per mode ── */
+	let blockTitle, blockSummary;
+
+	if ( isMast ) {
+		blockTitle = __( 'Homepage Mast', 'buttercup' );
+		blockSummary = mastTitle
+			? `${ __( 'Showing:', 'buttercup' ) } ${ mastTitle }`
+			: __( 'Will show the newest mast-tagged post or page.', 'buttercup' );
+	} else if ( isHomeAll ) {
+		blockTitle = __( 'Homepage Items', 'buttercup' );
+		blockSummary = isLoading
+			? __( 'Loading\u2026', 'buttercup' )
+			: homeCount > 0
+			? `${ homeCount } ${ homeCount === 1
+				? __( 'item', 'buttercup' )
+				: __( 'items', 'buttercup' )
+			} ${ __( 'from home-tagged content.', 'buttercup' ) }`
+			: __( 'No home-tagged content found. Tag posts or pages to populate this area.', 'buttercup' );
+	} else {
+		blockTitle = __( 'Homepage Feed', 'buttercup' );
+		blockSummary = __( 'Renders mast and home items together.', 'buttercup' );
+	}
+
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody title={ __( 'Render Mode', 'buttercup' ) }>
-					<SelectControl
-						label={ __( 'What to render', 'buttercup' ) }
-						value={ renderMode || 'all' }
-						options={ [
-							{
-								label: __(
-									'All (mast + home items)',
-									'buttercup'
-								),
-								value: 'all',
-							},
-							{
-								label: __( 'Mast only', 'buttercup' ),
-								value: 'mast',
-							},
-							{
-								label: __(
-									'Single home item',
-									'buttercup'
-								),
-								value: 'home-item',
-							},
-						] }
-						onChange={ ( value ) =>
-							setAttributes( { renderMode: value } )
-						}
-						help={ __(
-							'Use "Single home item" to place individual home-tagged items anywhere on the page.',
-							'buttercup'
-						) }
-						__nextHasNoMarginBottom
-					/>
-					{ renderMode === 'home-item' && (
-						<RangeControl
-							label={ __( 'Home item position', 'buttercup' ) }
-							value={ homePosition || 1 }
-							onChange={ ( value ) =>
-								setAttributes( { homePosition: value } )
-							}
-							min={ 1 }
-							max={ 5 }
-							help={ __(
-								'Which home item to render (1 = newest, up to 5).',
+				<PanelBody
+					title={ __( 'Tag Settings', 'buttercup' ) }
+					initialOpen={ true }
+				>
+					{ tagSuggestions.length === 0 && (
+						<Notice status="info" isDismissible={ false }>
+							{ __(
+								'No tags found. Create tags in Posts \u2192 Tags, then assign them to posts or pages.',
 								'buttercup'
 							) }
-							__nextHasNoMarginBottom
-						/>
+						</Notice>
 					) }
-				</PanelBody>
-				<PanelBody title={ __( 'Feed Settings', 'buttercup' ) }>
-					<TextControl
-						label={ __( 'CTA Label', 'buttercup' ) }
-						value={ ctaLabel }
-						onChange={ ( value ) =>
-							setAttributes( { ctaLabel: value } )
-						}
-						help={ __(
-							'Used in split/text sections.',
-							'buttercup'
-						) }
-						__nextHasNoMarginBottom
-					/>
-					{ renderMode !== 'home-item' && (
+					<p
+						style={ {
+							fontSize: 12,
+							color: '#757575',
+							margin: '0 0 16px',
+						} }
+					>
+						{ isMast
+							? __(
+								'Tag a post or page with a "mast" tag to feature it here as the hero item.',
+								'buttercup'
+							)
+							: __(
+								'Tag posts or pages with a "home" tag and they will automatically appear here.',
+								'buttercup'
+							) }
+					</p>
+					{ ( isMast || ( ! isMast && ! isHomeAll ) ) && (
+						<>
+							<FormTokenField
+								label={ __( 'Mast Tag', 'buttercup' ) }
+								value={
+									mastTagSlug ? [ mastTagSlug ] : []
+								}
+								onChange={ ( tokens ) =>
+									setAttributes( {
+										mastTagSlug:
+											normalizeTokenSlug( tokens ),
+									} )
+								}
+								suggestions={ tagSuggestions }
+								help={ `${ __( 'Defaults to', 'buttercup' ) } "${ feedDefaults.mastTagSlug || 'mast' }".` }
+								__nextHasNoMarginBottom
+							/>
+						</>
+					) }
+					{ ( isHomeAll || ( ! isMast && ! isHomeAll ) ) && (
 						<FormTokenField
-							label={ __( 'Mast Tag Slug', 'buttercup' ) }
-							value={ mastTagSlug ? [ mastTagSlug ] : [] }
+							label={ __( 'Home Tag', 'buttercup' ) }
+							value={ homeTagSlug ? [ homeTagSlug ] : [] }
 							onChange={ ( tokens ) =>
 								setAttributes( {
-									mastTagSlug:
+									homeTagSlug:
 										normalizeTokenSlug( tokens ),
 								} )
 							}
 							suggestions={ tagSuggestions }
-							help={ __(
-								'Type or select a tag slug. Custom values are allowed.',
-								'buttercup'
-							) }
+							help={ `${ __( 'Defaults to', 'buttercup' ) } "${ feedDefaults.homeTagSlug || 'home' }".` }
 							__nextHasNoMarginBottom
 						/>
 					) }
-					{ renderMode !== 'home-item' && (
-						<p className="buttercup-homepage-feed-editor__tag-hint">
-							{ getTagCountHint(
-								mastTagSlug,
-								'mast',
-								tagCounts
-							) }
-						</p>
-					) }
-					<FormTokenField
-						label={ __( 'Home Tag Slug', 'buttercup' ) }
-						value={ homeTagSlug ? [ homeTagSlug ] : [] }
-						onChange={ ( tokens ) =>
-							setAttributes( {
-								homeTagSlug: normalizeTokenSlug( tokens ),
-							} )
+					<TextControl
+						label={ __( 'CTA Label', 'buttercup' ) }
+						value={ ctaLabel }
+						onChange={ ( v ) =>
+							setAttributes( { ctaLabel: v } )
 						}
-						suggestions={ tagSuggestions }
 						help={ __(
-							'Type or select a tag slug. Custom values are allowed.',
+							'Button text on items with no hero image.',
 							'buttercup'
 						) }
 						__nextHasNoMarginBottom
 					/>
-					<p className="buttercup-homepage-feed-editor__tag-hint">
-						{ getTagCountHint( homeTagSlug, 'home', tagCounts ) }
-					</p>
 				</PanelBody>
+				{ isHomeAll && ! isLoading && homeCount > 0 && (
+					<PanelBody
+						title={ `${ __( 'Active Items', 'buttercup' ) } (${ homeCount })` }
+						initialOpen={ false }
+					>
+						<ol style={ { margin: 0, paddingLeft: 20 } }>
+							{ homeItems.map( ( item ) => (
+								<li
+									key={ item.id }
+									style={ {
+										fontSize: 13,
+										marginBottom: 4,
+									} }
+								>
+									{ item.title ||
+										__( '(Untitled)', 'buttercup' ) }
+								</li>
+							) ) }
+						</ol>
+						<p
+							style={ {
+								fontSize: 12,
+								color: '#757575',
+								marginTop: 12,
+							} }
+						>
+							{ __(
+								'Ordered by publish date (newest first). Change a post\u2019s date to reorder.',
+								'buttercup'
+							) }
+						</p>
+					</PanelBody>
+				) }
 			</InspectorControls>
 			<div { ...blockProps }>
-				<h3>
-					{ renderMode === 'mast'
-						? __( 'Homepage Feed — Mast', 'buttercup' )
-						: renderMode === 'home-item'
-						? __( 'Homepage Feed — Home Item #', 'buttercup' ) +
-						  ( homePosition || 1 )
-						: __( 'Homepage Feed', 'buttercup' ) }
-				</h3>
+				<h3>{ blockTitle }</h3>
 				<p className="buttercup-homepage-feed-editor__summary">
-					{ renderMode === 'mast'
-						? __(
-								'Renders the mast item from tagged posts/pages.',
-								'buttercup'
-						  )
-						: renderMode === 'home-item'
-						? __(
-								'Renders a single home item. Use multiple blocks to place home items independently.',
-								'buttercup'
-						  )
-						: __(
-								'Renders one mast item and up to five home items from tagged posts/pages.',
-								'buttercup'
-						  ) }
+					{ blockSummary }
 				</p>
-
-				{ blockCount > 1 && renderMode === 'all' && (
-					<Notice status="warning" isDismissible={ false }>
-						{ __(
-							'Use only one Homepage Feed block per page to avoid duplicate mast/home content.',
-							'buttercup'
-						) }
-					</Notice>
-				) }
-
-				{ isFrontPage &&
-					renderMode === 'all' &&
-					! isLoading &&
-					homeItemCount > 0 && (
-						<Notice status="info" isDismissible={ false }>
-							<p>
-								{ __(
-									'This is the homepage. Split this block into individually reorderable items so you can place each home column anywhere on the page.',
-									'buttercup'
-								) }
-							</p>
-							<Button
-								variant="primary"
-								onClick={ expandToIndividualBlocks }
-							>
-								{ __(
-									'Split into individual items',
-									'buttercup'
-								) }
-							</Button>
-						</Notice>
-					) }
 
 				{ errorMessage && (
 					<Notice status="error" isDismissible={ false }>
 						{ errorMessage }
 					</Notice>
 				) }
-
 				{ isLoading && (
 					<div className="buttercup-homepage-feed-editor__loading">
 						<Spinner />
 					</div>
 				) }
 
-				{ ! isLoading && status && (
-					<div className="buttercup-homepage-feed-editor__status">
-						{ ( status.mastOverflow ||
-							status.homeOverflow ||
-							( status.dualTagged &&
-								status.dualTagged.length > 0 ) ) && (
-							<div className="buttercup-homepage-feed-editor__warnings">
-								{ status.mastOverflow && (
-									<Notice
-										status="warning"
-										isDismissible={ false }
-									>
-										{ __(
-											'More than one mast-tagged item found. Only the newest mast item will render.',
-											'buttercup'
-										) }
-									</Notice>
-								) }
-								{ status.homeOverflow && (
-									<Notice
-										status="warning"
-										isDismissible={ false }
-									>
-										{ __(
-											'More than five home-tagged items found. Only the newest five home items will render.',
-											'buttercup'
-										) }
-									</Notice>
-								) }
-								{ status.dualTagged &&
-									status.dualTagged.length > 0 && (
-										<Notice
-											status="warning"
-											isDismissible={ false }
-										>
-											{ __(
-												'Some items have both mast and home tags. They are treated as mast-only.',
-												'buttercup'
-											) }
-										</Notice>
-									) }
-							</div>
+				{ status?.mastOverflow && ( isMast || ! isHomeAll ) && (
+					<Notice status="warning" isDismissible={ false }>
+						{ __(
+							'More than one mast-tagged item found. Only the newest will render.',
+							'buttercup'
 						) }
-
-						<p>{ countsMessage }</p>
-
-						<div className="buttercup-homepage-feed-editor__list-wrap">
-							<h4>{ __( 'Selected Mast', 'buttercup' ) }</h4>
-							{ status.mastSelected &&
-							status.mastSelected.length > 0 ? (
-								<ul>
-									{ status.mastSelected.map( ( item ) => (
-										<li key={ item.id }>
-											{ item.title ||
-												__(
-													'(Untitled)',
-													'buttercup'
-												) }
-										</li>
-									) ) }
-								</ul>
-							) : (
-								<p>
-									{ __(
-										'No mast item selected.',
-										'buttercup'
-									) }
-								</p>
-							) }
-						</div>
-
-						<div className="buttercup-homepage-feed-editor__list-wrap">
-							<h4>
-								{ __( 'Selected Home Items', 'buttercup' ) }
-							</h4>
-							{ status.homeSelected &&
-							status.homeSelected.length > 0 ? (
-								<ul>
-									{ status.homeSelected.map( ( item ) => (
-										<li key={ item.id }>
-											{ item.title ||
-												__(
-													'(Untitled)',
-													'buttercup'
-												) }
-										</li>
-									) ) }
-								</ul>
-							) : (
-								<p>
-									{ __(
-										'No home items selected.',
-										'buttercup'
-									) }
-								</p>
-							) }
-						</div>
-					</div>
+					</Notice>
 				) }
+				{ status?.dualTagged?.length > 0 &&
+					! isMast &&
+					! isHomeAll && (
+						<Notice status="warning" isDismissible={ false }>
+							{ __(
+								'Some items have both mast and home tags. They are treated as mast-only.',
+								'buttercup'
+							) }
+						</Notice>
+					) }
 
 				<div className="buttercup-homepage-feed-editor__preview">
 					<div className="buttercup-homepage-feed-editor__preview-controls">
-						<Button
-							variant={
-								previewViewport === 'desktop'
-									? 'primary'
-									: 'secondary'
-							}
-							onClick={ () => setPreviewViewport( 'desktop' ) }
-						>
-							{ __( 'Desktop', 'buttercup' ) }
-						</Button>
-						<Button
-							variant={
-								previewViewport === 'tablet'
-									? 'primary'
-									: 'secondary'
-							}
-							onClick={ () => setPreviewViewport( 'tablet' ) }
-						>
-							{ __( 'Tablet', 'buttercup' ) }
-						</Button>
-						<Button
-							variant={
-								previewViewport === 'mobile'
-									? 'primary'
-									: 'secondary'
-							}
-							onClick={ () => setPreviewViewport( 'mobile' ) }
-						>
-							{ __( 'Mobile', 'buttercup' ) }
-						</Button>
+						{ [ 'desktop', 'tablet', 'mobile' ].map( ( vp ) => (
+							<Button
+								key={ vp }
+								variant={
+									previewViewport === vp
+										? 'primary'
+										: 'secondary'
+								}
+								onClick={ () =>
+									setPreviewViewport( vp )
+								}
+							>
+								{ vp.charAt( 0 ).toUpperCase() +
+									vp.slice( 1 ) }
+							</Button>
+						) ) }
 					</div>
 					<div
 						className={ `buttercup-homepage-feed-editor__preview-frame is-${ previewViewport }` }
@@ -558,14 +336,13 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 									...attributes,
 									mastTagSlug: normalizeSlug(
 										mastTagSlug,
-										'mast'
+										feedDefaults.mastTagSlug || 'mast'
 									),
 									homeTagSlug: normalizeSlug(
 										homeTagSlug,
-										'home'
+										feedDefaults.homeTagSlug || 'home'
 									),
-									renderMode: renderMode || 'all',
-									homePosition: homePosition || 1,
+									renderMode: mode,
 								} }
 								httpMethod="GET"
 								skipBlockSupportAttributes

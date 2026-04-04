@@ -90,7 +90,7 @@ function buttercup_tag_showcase_sanitize_attributes($attributes)
         'postTypes' => ['post', 'page'],
         'orderBy' => 'date',
         'order' => 'desc',
-        'maxItems' => 12,
+        'maxItems' => intval(get_option('buttercup_showcase_max_items', 12)),
         'offset' => 0,
         'excludeCurrentPost' => false,
         'showThumbnail' => true,
@@ -100,7 +100,7 @@ function buttercup_tag_showcase_sanitize_attributes($attributes)
         'showType' => false,
         'showDate' => false,
         'snippetWords' => 20,
-        'buttonLabel' => __('Read More', 'buttercup'),
+        'buttonLabel' => '',
         'clickMode' => 'card-cta',
         'openInNewTab' => false,
         'buttonStyle' => 'solid',
@@ -120,7 +120,7 @@ function buttercup_tag_showcase_sanitize_attributes($attributes)
         'columnGap' => 24,
         'rowGap' => 24,
         'textAlign' => 'left',
-        'imageAspectRatio' => '16/9',
+        'imageAspectRatio' => get_option('buttercup_showcase_aspect_ratio', '16/9'),
         'cardPadding' => 20,
         'cardRadius' => 10,
         'cardBackground' => '',
@@ -199,6 +199,9 @@ function buttercup_tag_showcase_sanitize_attributes($attributes)
     }
 
     $button_label = trim((string) $attrs['buttonLabel']);
+    if ($button_label === '') {
+        $button_label = get_option('buttercup_showcase_button_label', '');
+    }
     if ($button_label === '') {
         $button_label = __('Read More', 'buttercup');
     }

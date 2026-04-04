@@ -7,12 +7,22 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Plugin metadata: minimum WP/PHP versions, license, Update URI
 - `uninstall.php` for clean removal of plugin data
+- Events system: custom post type, archive/single templates, settings page, creation wizard, iCal import
+- Events REST endpoints (`events-status`, `events-sync`) with editor sidebar block
+- Facebook event sync via Graph API on WP-Cron schedule
+- Homepage feed `home-all` render mode for displaying all home-tagged posts
+- Homepage feed images meta box now available on `buttercup_event` posts
+- Deprecated v1 save handler for team-member block backward compatibility
+- `enableMemberPage` attribute on team-member block (replaces `disableMemberPage`)
+- Caching layer with versioned transient invalidation
 
 ### Fixed
 - Facebook sync now sends access token via Authorization header instead of URL query string
 
 ### Changed
-- N/A
+- Homepage feed, tag showcase, and team blocks now pull defaults from plugin settings
+- Removed hard cap of 5 home-tagged posts in homepage feed collection
+- Build scripts updated to include events-meta entry point
 
 ## [1.0.0]
 

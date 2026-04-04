@@ -1,0 +1,27 @@
+.buttercup-events-editor {
+	padding: 20px;
+	background: #f9f9f9;
+	border: 1px solid #e0e0e0;
+	border-radius: 4px;
+
+	h3 {
+		margin: 0 0 4px;
+		font-size: 16px;
+	}
+
+	&__summary {
+		margin: 0 0 16px;
+		font-size: 13px;
+		color: #757575;
+	}
+
+	&__loading {
+		display: flex;
+		justify-content: center;
+		padding: 20px 0;
+	}
+
+	&__preview {
+		margin-top: 12px;
+	}
+}

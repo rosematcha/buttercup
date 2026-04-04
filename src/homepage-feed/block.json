@@ -6,7 +6,7 @@
 	"title": "Homepage Feed",
 	"category": "widgets",
 	"icon": "welcome-widgets-menus",
-	"description": "Render homepage sections from posts/pages tagged mast and home.",
+	"description": "Render individual homepage sections from posts/pages tagged mast and home.",
 	"supports": {
 		"html": false,
 		"align": [ "wide", "full" ]
@@ -31,7 +31,7 @@
 		"renderMode": {
 			"type": "string",
 			"default": "all",
-			"enum": [ "all", "mast", "home-item" ]
+			"enum": [ "all", "mast", "home-all", "home-item" ]
 		},
 		"homePosition": {
 			"type": "integer",

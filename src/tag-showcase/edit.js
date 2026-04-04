@@ -44,6 +44,8 @@ function uniqueSlugs( values ) {
 	return result;
 }
 
+const showcaseDefaults = window.buttercupDefaults?.showcase || {};
+
 function toInt( value, fallback ) {
 	const parsed = parseInt( value, 10 );
 	return Number.isNaN( parsed ) ? fallback : parsed;
@@ -567,6 +569,7 @@ export default function Edit( { attributes, setAttributes } ) {
 						onChange={ ( value ) =>
 							setAttributes( { buttonLabel: value } )
 						}
+						placeholder={ showcaseDefaults.buttonLabel || __( 'Read More', 'buttercup' ) }
 						help={ __(
 							'Used when button display is enabled.',
 							'buttercup'

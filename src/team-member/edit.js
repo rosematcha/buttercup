@@ -50,7 +50,7 @@ export default function Edit( {
 		email,
 		phone,
 		location,
-		disableMemberPage,
+		enableMemberPage,
 		memberSlug,
 		profileImageId,
 		profileImageUrl,
@@ -63,8 +63,25 @@ export default function Edit( {
 		socialLinks,
 	} = attributes;
 
-	const imageShape = context[ 'buttercup/imageShape' ] || 'circle';
-	const imageSize = context[ 'buttercup/imageSize' ] || 120;
+	// Migrate legacy disableMemberPage → enableMemberPage on first edit load.
+	// Pre-migration blocks may have disableMemberPage:true while enableMemberPage
+	// defaults to true (its block.json default). This inconsistent pair only exists
+	// in unmigrated content, so convert it and clear the legacy attribute.
+	useEffect( () => {
+		if (
+			attributes.disableMemberPage === true &&
+			attributes.enableMemberPage !== false
+		) {
+			setAttributes( {
+				enableMemberPage: false,
+				disableMemberPage: false,
+			} );
+		}
+	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	const teamDefaults = window.buttercupDefaults?.team || {};
+	const imageShape = context[ 'buttercup/imageShape' ] || teamDefaults.imageShape || 'circle';
+	const imageSize = context[ 'buttercup/imageSize' ] || teamDefaults.imageSize || 120;
 	const showBioFromParent = context[ 'buttercup/showBio' ] !== false;
 	const showPronounsFromParent =
 		context[ 'buttercup/showPronouns' ] !== false;
@@ -72,7 +89,7 @@ export default function Edit( {
 		context[ 'buttercup/enableMemberPages' ] !== false;
 	const shouldShowBio = showBioFromParent && showBio;
 	const memberPagesEnabled =
-		memberPagesEnabledFromParent && ! disableMemberPage;
+		memberPagesEnabledFromParent && enableMemberPage !== false;
 	const [ showSlugSettings, setShowSlugSettings ] = useState( false );
 
 	const permalink = useSelect( ( select ) => {
@@ -109,7 +126,10 @@ export default function Edit( {
 				return;
 			}
 			getTeamMembersFromBlock( block ).forEach( ( inner ) => {
-				if ( inner.attributes?.disableMemberPage ) {
+				if (
+					inner.attributes?.enableMemberPage === false ||
+					inner.attributes?.disableMemberPage === true
+				) {
 					return;
 				}
 				const slug = ( inner.attributes?.memberSlug || '' ).trim();
@@ -495,10 +515,10 @@ export default function Edit( {
 					initialOpen={ false }
 				>
 					<ToggleControl
-						label={ __( 'Disable Individual Page', 'buttercup' ) }
-						checked={ disableMemberPage }
+						label={ __( 'Enable Individual Page', 'buttercup' ) }
+						checked={ enableMemberPage !== false }
 						onChange={ ( v ) =>
-							setAttributes( { disableMemberPage: v } )
+							setAttributes( { enableMemberPage: v } )
 						}
 						disabled={ ! memberPagesEnabledFromParent }
 						help={
@@ -508,7 +528,7 @@ export default function Edit( {
 										'buttercup'
 								  )
 								: __(
-										'Keeps this person in the grid but removes their individual page.',
+										'When off, keeps this person in the grid but removes their individual page.',
 										'buttercup'
 								  )
 						}

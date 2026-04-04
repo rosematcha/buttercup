@@ -150,6 +150,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					memberBlock.attributes?.name || ''
 				);
 				const memberDisabled =
+					memberBlock.attributes?.enableMemberPage === false ||
 					memberBlock.attributes?.disableMemberPage === true;
 				signatureParts.push(
 					`${ memberBlock.clientId }:${ rawName.toLowerCase() }:${
@@ -174,6 +175,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 			members.forEach( ( member ) => {
 				const memberDisabled =
+					member.attributes?.enableMemberPage === false ||
 					member.attributes?.disableMemberPage === true;
 				if ( teamEnabled && ! memberDisabled ) {
 					enabledMembers.push( member );
@@ -249,7 +251,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 		teamMembers.forEach( ( member ) => {
 			updateBlockAttributes( member.clientId, {
-				disableMemberPage: ! enabled,
+				enableMemberPage: enabled,
 				memberPagesEnabled: enabled,
 			} );
 		} );
@@ -487,6 +489,39 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						onChange={ ( v ) => setAttributes( { showBio: v } ) }
 						__nextHasNoMarginBottom
 					/>
+					{ showBio && (
+						<>
+							<RangeControl
+								label={ __( 'Short Bio Lines', 'buttercup' ) }
+								value={ bioLines }
+								onChange={ ( v ) =>
+									setAttributes( { bioLines: v } )
+								}
+								min={ 1 }
+								max={ 8 }
+								step={ 1 }
+								__nextHasNoMarginBottom
+							/>
+							<TextControl
+								label={ __( 'Read More Label', 'buttercup' ) }
+								value={ readMoreLabel }
+								onChange={ ( v ) =>
+									setAttributes( { readMoreLabel: v } )
+								}
+								placeholder={ __( 'Read more', 'buttercup' ) }
+								__nextHasNoMarginBottom
+							/>
+							<TextControl
+								label={ __( 'Read Less Label', 'buttercup' ) }
+								value={ readLessLabel }
+								onChange={ ( v ) =>
+									setAttributes( { readLessLabel: v } )
+								}
+								placeholder={ __( 'Read less', 'buttercup' ) }
+								__nextHasNoMarginBottom
+							/>
+						</>
+					) }
 					<ToggleControl
 						label={ __( 'Show Social Links on Grid', 'buttercup' ) }
 						checked={ resolvedShowSocialGrid }
@@ -678,38 +713,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						onChange={ ( v ) =>
 							setAttributes( { cardHoverEffect: v } )
 						}
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
-				<PanelBody
-					title={ __( 'Short Bio Preview', 'buttercup' ) }
-					initialOpen={ false }
-				>
-					<RangeControl
-						label={ __( 'Short Bio Lines', 'buttercup' ) }
-						value={ bioLines }
-						onChange={ ( v ) => setAttributes( { bioLines: v } ) }
-						min={ 1 }
-						max={ 8 }
-						step={ 1 }
-						__nextHasNoMarginBottom
-					/>
-					<TextControl
-						label={ __( 'Short Bio Read More Label', 'buttercup' ) }
-						value={ readMoreLabel }
-						onChange={ ( v ) =>
-							setAttributes( { readMoreLabel: v } )
-						}
-						placeholder={ __( 'Read more', 'buttercup' ) }
-						__nextHasNoMarginBottom
-					/>
-					<TextControl
-						label={ __( 'Short Bio Read Less Label', 'buttercup' ) }
-						value={ readLessLabel }
-						onChange={ ( v ) =>
-							setAttributes( { readLessLabel: v } )
-						}
-						placeholder={ __( 'Read less', 'buttercup' ) }
 						__nextHasNoMarginBottom
 					/>
 				</PanelBody>

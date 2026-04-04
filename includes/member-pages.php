@@ -342,6 +342,7 @@ add_filter('redirect_canonical', 'buttercup_disable_member_canonical', 10, 2);
 function buttercup_activation_refresh()
 {
     buttercup_refresh_member_bases();
+    buttercup_fb_sync_activate();
     flush_rewrite_rules();
     delete_option('buttercup_needs_rewrite_flush');
 }
@@ -453,7 +454,13 @@ function buttercup_collect_member_entries($blocks, &$entries, $visited_refs = []
                 foreach ($block['innerBlocks'] ?? [] as $inner) {
                     if (($inner['blockName'] ?? '') === 'buttercup/team-member') {
                         $member_attrs = $inner['attrs'] ?? [];
-                        if (!empty($member_attrs['disableMemberPage'])) {
+                        $member_page_disabled = false;
+                        if (array_key_exists('enableMemberPage', $member_attrs)) {
+                            $member_page_disabled = !$member_attrs['enableMemberPage'];
+                        } elseif (!empty($member_attrs['disableMemberPage'])) {
+                            $member_page_disabled = true;
+                        }
+                        if ($member_page_disabled) {
                             continue;
                         }
                         $entries[] = [
@@ -650,8 +657,10 @@ function buttercup_render_member_page()
         return $value;
     };
 
-    $image_shape = $team['imageShape'] ?? 'circle';
-    $image_size = $clamp_int(isset($team['imageSize']) ? $team['imageSize'] : 192, 40, 600);
+    $default_shape = get_option('buttercup_team_image_shape', 'squircle');
+    $default_size  = intval(get_option('buttercup_team_image_size', 192));
+    $image_shape = $team['imageShape'] ?? $default_shape;
+    $image_size = $clamp_int(isset($team['imageSize']) ? $team['imageSize'] : $default_size, 40, 600);
     $squircle_radius = isset($team['squircleRadius']) ? floatval($team['squircleRadius']) : 22;
     $member_card_bg = isset($team['memberPageCardBackground']) ? trim($team['memberPageCardBackground']) : '';
     $member_card_radius = $clamp_int(isset($team['memberPageCardRadius']) ? $team['memberPageCardRadius'] : 20, 0, 32);

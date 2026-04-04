@@ -254,5 +254,92 @@ function buttercup_register_rest_routes()
             ],
         ],
     ]);
+    register_rest_route('buttercup/v1', '/events-status', [
+        'methods' => 'GET',
+        'callback' => 'buttercup_rest_events_status',
+        'permission_callback' => function () {
+            return current_user_can('edit_posts');
+        },
+        'args' => [
+            'displayMode' => [
+                'type' => 'string',
+                'required' => false,
+                'default' => 'upcoming',
+                'sanitize_callback' => function ($value) {
+                    return in_array($value, ['upcoming', 'past'], true) ? $value : 'upcoming';
+                },
+            ],
+            'eventsToShow' => [
+                'type' => 'integer',
+                'required' => false,
+                'default' => 6,
+                'sanitize_callback' => 'absint',
+            ],
+        ],
+    ]);
+
+    register_rest_route('buttercup/v1', '/events-sync', [
+        'methods' => 'POST',
+        'callback' => 'buttercup_rest_events_sync',
+        'permission_callback' => function () {
+            return current_user_can('manage_options');
+        },
+    ]);
 }
 add_action('rest_api_init', 'buttercup_register_rest_routes');
+
+function buttercup_rest_events_status($request)
+{
+    $display_mode   = $request['displayMode'] ?? 'upcoming';
+    $default_count  = intval(get_option('buttercup_events_per_page', 6));
+    $events_to_show = max(1, min(50, intval($request['eventsToShow'] ?? $default_count)));
+    $now            = current_time('Y-m-d H:i:s');
+
+    $query_args = [
+        'post_type'      => 'buttercup_event',
+        'posts_per_page' => $events_to_show,
+        'post_status'    => 'publish',
+        'meta_key'       => '_buttercup_event_start',
+        'orderby'        => 'meta_value',
+        'order'          => $display_mode === 'past' ? 'DESC' : 'ASC',
+        'meta_query'     => [
+            [
+                'key'     => '_buttercup_event_start',
+                'value'   => $now,
+                'compare' => $display_mode === 'past' ? '<' : '>=',
+                'type'    => 'DATETIME',
+            ],
+        ],
+    ];
+
+    $query  = new WP_Query($query_args);
+    $events = [];
+
+    while ($query->have_posts()) {
+        $query->the_post();
+        $post_id = get_the_ID();
+        $start        = get_post_meta($post_id, '_buttercup_event_start', true);
+        $end          = get_post_meta($post_id, '_buttercup_event_end', true);
+        $start_allday = (bool) get_post_meta($post_id, '_buttercup_event_start_allday', true);
+        $end_allday   = (bool) get_post_meta($post_id, '_buttercup_event_end_allday', true);
+
+        $events[] = [
+            'id'       => $post_id,
+            'title'    => get_the_title(),
+            'start'    => $start ? buttercup_format_event_date_range($start, $end, $start_allday, $end_allday) : '',
+            'location' => get_post_meta($post_id, '_buttercup_event_location', true),
+        ];
+    }
+    wp_reset_postdata();
+
+    return rest_ensure_response([
+        'count'  => $query->found_posts,
+        'events' => $events,
+    ]);
+}
+
+function buttercup_rest_events_sync()
+{
+    $result = buttercup_facebook_sync_run();
+    return rest_ensure_response($result);
+}

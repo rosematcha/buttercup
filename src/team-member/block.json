@@ -59,6 +59,10 @@
 			"type": "boolean",
 			"default": true
 		},
+		"enableMemberPage": {
+			"type": "boolean",
+			"default": true
+		},
 		"disableMemberPage": {
 			"type": "boolean",
 			"default": false

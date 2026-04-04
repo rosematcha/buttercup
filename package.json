@@ -7,11 +7,12 @@
 		"buttercup.php",
 		"includes",
 		"build",
-		"assets/homepage-meta.js",
+		"templates",
+		"assets",
 		"LICENSE"
 	],
 	"scripts": {
-		"build": "wp-scripts build",
+		"build": "wp-scripts build && wp-scripts build src/events-meta/index.js --output-path=build/events-meta",
 		"check-engines": "wp-scripts check-engines",
 		"check-licenses": "wp-scripts check-licenses",
 		"format": "wp-scripts format",
@@ -21,7 +22,7 @@
 		"lint:pkg-json": "wp-scripts lint-pkg-json",
 		"packages-update": "wp-scripts packages-update",
 		"plugin-zip": "wp-scripts plugin-zip",
-		"start": "wp-scripts start",
+		"start": "wp-scripts start & wp-scripts start src/events-meta/index.js --output-path=build/events-meta",
 		"test:unit": "wp-scripts test-unit-js"
 	},
 	"repository": {

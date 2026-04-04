@@ -10,7 +10,7 @@ export default function save( { attributes } ) {
 		showBio,
 		memberSlug,
 		memberPagesEnabled,
-		enableMemberPage,
+		disableMemberPage,
 		profileImageUrl,
 		profileImageSource,
 		profileImageAlt,
@@ -52,7 +52,7 @@ export default function save( { attributes } ) {
 	};
 
 	const showMemberLink =
-		memberPagesEnabled && enableMemberPage !== false && memberSlug;
+		memberPagesEnabled && ! disableMemberPage && memberSlug;
 	const buildMemberHref = () => {
 		if ( ! showMemberLink ) {
 			return undefined;
