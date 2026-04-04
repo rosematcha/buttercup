@@ -1,10 +1,16 @@
 <?php
 /**
  * Plugin Name:       Buttercup
+ * Plugin URI:        https://github.com/rosematcha/buttercup/
  * Description:       Custom blocks for Reese's sites.
  * Version:           1.0.0
  * Author:            Reese Lundquist
+ * Author URI:        https://rosematcha.com/
+ * License:           GPL-2.0-or-later
  * Text Domain:       buttercup
+ * Requires at least: 5.3
+ * Requires PHP:      7.2
+ * Update URI:        false
  */
 
 if (!defined('ABSPATH')) {
@@ -15,87 +21,35 @@ if (!defined('BUTTERCUP_MAX_BLOCK_DEPTH')) {
     define('BUTTERCUP_MAX_BLOCK_DEPTH', 40);
 }
 
-function buttercup_cache_version()
-{
-    return intval(get_option('buttercup_cache_version', 1));
+if (!defined('BUTTERCUP_PLUGIN_FILE')) {
+    define('BUTTERCUP_PLUGIN_FILE', __FILE__);
 }
 
-function buttercup_build_cache_key($namespace, $parts = [])
-{
-    $version = buttercup_cache_version();
-    $payload = wp_json_encode([$namespace, $version, $parts]);
-    return 'buttercup:' . md5((string) $payload);
+if (!defined('BUTTERCUP_PLUGIN_DIR')) {
+    define('BUTTERCUP_PLUGIN_DIR', __DIR__);
 }
 
-function buttercup_cache_get($key)
-{
-    $cached = wp_cache_get($key, 'buttercup');
-    if ($cached !== false) {
-        return $cached;
-    }
+/* ── Includes ── */
 
-    $cached = get_transient($key);
-    if ($cached !== false) {
-        wp_cache_set($key, $cached, 'buttercup', 600);
-        return $cached;
-    }
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/cache.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/images.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/homepage-feed.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/tag-showcase.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/member-pages.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/rest.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/events-settings.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/events-cpt.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/events-render.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/events-template.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/facebook-sync.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/ical-parser.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/facebook-html-parser.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/events-import.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/events-wizard-common.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/events-add-new.php';
+require_once BUTTERCUP_PLUGIN_DIR . '/includes/events-edit-wizard.php';
 
-    return null;
-}
-
-function buttercup_cache_set($key, $value, $ttl = 600)
-{
-    wp_cache_set($key, $value, 'buttercup', $ttl);
-    set_transient($key, $value, $ttl);
-}
-
-function buttercup_bump_cache_version()
-{
-    $next_version = max(2, buttercup_cache_version() + 1);
-    update_option('buttercup_cache_version', $next_version, false);
-}
-
-function buttercup_invalidate_cached_views($post_id = 0)
-{
-    if ($post_id > 0 && (wp_is_post_autosave($post_id) || wp_is_post_revision($post_id))) {
-        return;
-    }
-    buttercup_bump_cache_version();
-}
-
-function buttercup_invalidate_cached_views_for_terms($object_id, $terms, $tt_ids, $taxonomy, $append, $old_tt_ids)
-{
-    if ($taxonomy !== 'post_tag') {
-        return;
-    }
-    buttercup_bump_cache_version();
-}
-
-function buttercup_schedule_rewrite_flush()
-{
-    update_option('buttercup_needs_rewrite_flush', 1, false);
-}
-
-function buttercup_maybe_flush_rewrite_rules()
-{
-    static $flushed = false;
-
-    if ($flushed) {
-        return;
-    }
-
-    if (intval(get_option('buttercup_needs_rewrite_flush', 0)) !== 1) {
-        return;
-    }
-
-    $flushed = true;
-    flush_rewrite_rules(false);
-    delete_option('buttercup_needs_rewrite_flush');
-}
-add_action('shutdown', 'buttercup_maybe_flush_rewrite_rules');
-add_action('save_post', 'buttercup_invalidate_cached_views');
-add_action('deleted_post', 'buttercup_invalidate_cached_views');
-add_action('set_object_terms', 'buttercup_invalidate_cached_views_for_terms', 10, 6);
+/* ── Member slug helpers ── */
 
 function buttercup_normalize_member_slug($slug)
 {
@@ -121,120 +75,38 @@ function buttercup_get_member_match_cache($request_path = null, $refresh = false
     return $memo[$cache_key];
 }
 
-function buttercup_build_image_candidates($attachment_id) {
-    $meta = wp_get_attachment_metadata($attachment_id);
-    if (!$meta || empty($meta['width']) || empty($meta['height'])) {
-        return [];
-    }
+/* ── Rewrite flush scheduling ── */
 
-    $upload_dir = wp_get_upload_dir();
-    $base_url = isset($upload_dir['baseurl']) ? $upload_dir['baseurl'] : '';
-    $base_url = $base_url !== '' ? trailingslashit($base_url) : '';
-    $file = isset($meta['file']) ? $meta['file'] : '';
-    $file_dir = $file ? trailingslashit(dirname($file)) : '';
-
-    $candidates = [];
-    $full_url = wp_get_attachment_url($attachment_id);
-    if ($full_url) {
-        $candidates[] = [
-            'url' => $full_url,
-            'width' => intval($meta['width']),
-            'height' => intval($meta['height']),
-            'crop' => false,
-        ];
-    }
-
-    if (!empty($meta['sizes']) && $base_url !== '' && $file_dir !== '') {
-        foreach ($meta['sizes'] as $size) {
-            if (empty($size['file']) || empty($size['width']) || empty($size['height'])) {
-                continue;
-            }
-            $candidates[] = [
-                'url' => $base_url . $file_dir . $size['file'],
-                'width' => intval($size['width']),
-                'height' => intval($size['height']),
-                'crop' => !empty($size['crop']),
-            ];
-        }
-    }
-
-    return $candidates;
+function buttercup_schedule_rewrite_flush()
+{
+    update_option('buttercup_needs_rewrite_flush', 1, false);
 }
 
-function buttercup_filter_uncropped_candidates($candidates, $orig_ratio) {
-    $filtered = [];
-    $ratio_tolerance = 0.08;
-    $orig_is_square = abs($orig_ratio - 1) <= 0.05;
+function buttercup_maybe_flush_rewrite_rules()
+{
+    static $flushed = false;
 
-    foreach ($candidates as $candidate) {
-        if (empty($candidate['width']) || empty($candidate['height'])) {
-            continue;
-        }
-        if (!empty($candidate['crop'])) {
-            continue;
-        }
-        if ($orig_ratio > 0) {
-            $ratio = $candidate['width'] / $candidate['height'];
-            if (!$orig_is_square) {
-                if (abs($ratio - $orig_ratio) / $orig_ratio > $ratio_tolerance) {
-                    continue;
-                }
-            }
-        }
-        $filtered[] = $candidate;
+    if ($flushed) {
+        return;
     }
 
-    return $filtered;
-}
-
-function buttercup_pick_best_candidate($candidates, $target_width) {
-    if (empty($candidates)) {
-        return null;
+    if (intval(get_option('buttercup_needs_rewrite_flush', 0)) !== 1) {
+        return;
     }
-    usort($candidates, function ($a, $b) {
-        return $a['width'] <=> $b['width'];
-    });
-    foreach ($candidates as $candidate) {
-        if ($candidate['width'] >= $target_width) {
-            return $candidate;
-        }
-    }
-    return $candidates[count($candidates) - 1];
+
+    $flushed = true;
+    flush_rewrite_rules(false);
+    delete_option('buttercup_needs_rewrite_flush');
 }
+add_action('shutdown', 'buttercup_maybe_flush_rewrite_rules');
 
-function buttercup_build_srcset($candidates) {
-    if (empty($candidates)) {
-        return '';
-    }
-    usort($candidates, function ($a, $b) {
-        return $a['width'] <=> $b['width'];
-    });
-    $seen = [];
-    $parts = [];
-    foreach ($candidates as $candidate) {
-        $url = $candidate['url'];
-        if (!$url || isset($seen[$url])) {
-            continue;
-        }
-        $seen[$url] = true;
-        $parts[] = esc_url($url) . ' ' . intval($candidate['width']) . 'w';
-    }
-    return implode(', ', $parts);
-}
+/* ── Cache invalidation hooks ── */
 
+add_action('save_post', 'buttercup_invalidate_cached_views');
+add_action('deleted_post', 'buttercup_invalidate_cached_views');
+add_action('set_object_terms', 'buttercup_invalidate_cached_views_for_terms', 10, 6);
 
-if (!defined('BUTTERCUP_PLUGIN_FILE')) {
-    define('BUTTERCUP_PLUGIN_FILE', __FILE__);
-}
-
-if (!defined('BUTTERCUP_PLUGIN_DIR')) {
-    define('BUTTERCUP_PLUGIN_DIR', __DIR__);
-}
-
-require_once BUTTERCUP_PLUGIN_DIR . '/includes/homepage-feed.php';
-require_once BUTTERCUP_PLUGIN_DIR . '/includes/tag-showcase.php';
-require_once BUTTERCUP_PLUGIN_DIR . '/includes/member-pages.php';
-require_once BUTTERCUP_PLUGIN_DIR . '/includes/rest.php';
+/* ── Block registration ── */
 
 function buttercup_blocks_init()
 {
@@ -248,15 +120,92 @@ function buttercup_blocks_init()
     register_block_type(__DIR__ . '/build/tag-showcase', [
         'render_callback' => 'buttercup_render_tag_showcase',
     ]);
+    register_block_type(__DIR__ . '/build/events', [
+        'render_callback' => 'buttercup_render_events',
+    ]);
 }
 add_action('init', 'buttercup_blocks_init');
 
+/* ── Event editor sidebar panel ── */
+
+function buttercup_enqueue_event_meta_sidebar()
+{
+    $screen = get_current_screen();
+    if (!$screen || $screen->post_type !== 'buttercup_event') {
+        return;
+    }
+
+    $asset_file = BUTTERCUP_PLUGIN_DIR . '/build/events-meta/index.asset.php';
+    if (!file_exists($asset_file)) {
+        return;
+    }
+
+    $asset = require $asset_file;
+    wp_enqueue_script(
+        'buttercup-event-meta',
+        plugins_url('build/events-meta/index.js', BUTTERCUP_PLUGIN_FILE),
+        $asset['dependencies'],
+        $asset['version'],
+        true
+    );
+}
+add_action('enqueue_block_editor_assets', 'buttercup_enqueue_event_meta_sidebar');
+
+/* ── Pass plugin defaults to the block editor ── */
+
+function buttercup_localize_block_defaults()
+{
+    $defaults = [
+        'feed' => [
+            'ctaLabel'    => get_option('buttercup_feed_cta_label', ''),
+            'mastTagSlug' => get_option('buttercup_feed_mast_tag', 'mast'),
+            'homeTagSlug' => get_option('buttercup_feed_home_tag', 'home'),
+        ],
+        'showcase' => [
+            'buttonLabel'    => get_option('buttercup_showcase_button_label', ''),
+            'maxItems'       => intval(get_option('buttercup_showcase_max_items', 12)),
+            'imageAspectRatio' => get_option('buttercup_showcase_aspect_ratio', '16/9'),
+        ],
+        'team' => [
+            'imageShape' => get_option('buttercup_team_image_shape', 'squircle'),
+            'imageSize'  => intval(get_option('buttercup_team_image_size', 192)),
+        ],
+        'events' => [
+            'eventsPerPage' => intval(get_option('buttercup_events_per_page', 6)),
+        ],
+    ];
+
+    wp_add_inline_script(
+        'wp-block-editor',
+        'window.buttercupDefaults = ' . wp_json_encode($defaults) . ';',
+        'before'
+    );
+}
+add_action('enqueue_block_editor_assets', 'buttercup_localize_block_defaults');
+
+/* ── Conditional dashicon enqueue ── */
+
 function buttercup_enqueue_dashicons()
 {
-    if (!is_admin()) {
+    if (is_admin()) {
+        return;
+    }
+
+    global $post;
+    if (!$post instanceof WP_Post) {
+        return;
+    }
+
+    $needs_dashicons = has_block('buttercup/team', $post)
+        || has_block('buttercup/team-member', $post);
+
+    if ($needs_dashicons) {
         wp_enqueue_style('dashicons');
     }
 }
 add_action('enqueue_block_assets', 'buttercup_enqueue_dashicons');
 
+/* ── Activation ── */
+
 register_activation_hook(BUTTERCUP_PLUGIN_FILE, 'buttercup_activation_refresh');
+register_deactivation_hook(BUTTERCUP_PLUGIN_FILE, 'buttercup_fb_sync_deactivate');
