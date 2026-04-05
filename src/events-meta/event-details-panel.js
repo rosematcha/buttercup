@@ -15,11 +15,13 @@ import { useState, useEffect } from '@wordpress/element';
 
 /**
  * Parse a MySQL datetime string into separate date and time parts.
- * @param {string} mysqlStr  e.g. "2026-04-03 19:00:00"
- * @returns {{ date: string, time: string }}  date = "2026-04-03", time = "19:00"
+ * @param {string} mysqlStr e.g. "2026-04-03 19:00:00"
+ * @return {{ date: string, time: string }} date = "2026-04-03", time = "19:00"
  */
 function parseDatetime( mysqlStr ) {
-	if ( ! mysqlStr ) return { date: '', time: '' };
+	if ( ! mysqlStr ) {
+		return { date: '', time: '' };
+	}
 	const parts = mysqlStr.split( ' ' );
 	return {
 		date: parts[ 0 ] || '',
@@ -29,12 +31,14 @@ function parseDatetime( mysqlStr ) {
 
 /**
  * Combine a date and time string into MySQL DATETIME format.
- * @param {string} date  "YYYY-MM-DD"
- * @param {string} time  "HH:MM" (optional)
- * @returns {string}
+ * @param {string} date "YYYY-MM-DD"
+ * @param {string} time "HH:MM" (optional)
+ * @return {string} MySQL DATETIME string, e.g. "2026-04-03 19:00:00".
  */
 function buildMySQLDatetime( date, time ) {
-	if ( ! date ) return '';
+	if ( ! date ) {
+		return '';
+	}
 	return date + ' ' + ( time || '00:00' ) + ':00';
 }
 
@@ -66,6 +70,12 @@ const PAGE_MODE_HELP = {
 /**
  * Card shown when a page is linked — shows the page name with
  * "Edit Page", "Change", and "Unlink" actions.
+ * @param {Object}   root0                 Props.
+ * @param {string}   root0.pageTitle       Title of the linked page.
+ * @param {number}   root0.pageId          Post ID of the linked page.
+ * @param {Function} root0.onUnlink        Called when the user clicks Unlink.
+ * @param {Function} root0.onChangeRequest Called when the user clicks Change.
+ * @param {boolean}  root0.isChanging      Whether the change picker is open.
  */
 function LinkedPageCard( {
 	pageTitle,
@@ -139,7 +149,7 @@ export default function EventDetailsPanel() {
 	const { createInfoNotice, removeNotice } = useDispatch( 'core/notices' );
 
 	// Fetch published pages for the page selector.
-	const { pages, linkedPageTitle, linkedPageEditUrl } = useSelect(
+	const { pages, linkedPageTitle } = useSelect(
 		( select ) => {
 			const { getEntityRecords, getEntityRecord } = select( 'core' );
 			const query = {
@@ -151,67 +161,30 @@ export default function EventDetailsPanel() {
 			if ( pageSearch ) {
 				query.search = pageSearch;
 			}
-			const results =
-				getEntityRecords( 'postType', 'page', query ) || [];
+			const results = getEntityRecords( 'postType', 'page', query ) || [];
 
 			const linkedId = meta?._buttercup_event_linked_page
 				? parseInt( meta._buttercup_event_linked_page, 10 )
 				: 0;
 			let title = '';
-			let editLink = '';
 			if ( linkedId ) {
-				const linked = getEntityRecord(
-					'postType',
-					'page',
-					linkedId
-				);
+				const linked = getEntityRecord( 'postType', 'page', linkedId );
 				if ( linked ) {
 					title = linked.title?.rendered || '';
-					editLink = linked.link || '';
 				}
 			}
 
 			return {
 				pages: results,
 				linkedPageTitle: title,
-				linkedPageEditUrl: editLink,
 			};
 		},
 		[ pageSearch, meta?._buttercup_event_linked_page ]
 	);
 
-	if ( postType !== 'buttercup_event' ) {
-		return null;
-	}
-
-	const startDate = meta?._buttercup_event_start || '';
-	const endDate = meta?._buttercup_event_end || '';
-	const startAllDay = meta?._buttercup_event_start_allday === '1';
-	const endAllDay = meta?._buttercup_event_end_allday === '1';
-	const location = meta?._buttercup_event_location || '';
-	const eventUrl = meta?._buttercup_event_url || '';
-	const urlLabel = meta?._buttercup_event_url_label || 'more_info';
-	const pageMode = meta?._buttercup_event_page_mode || 'template';
-	const customSlug = meta?._buttercup_event_custom_slug || '';
 	const linkedPage = meta?._buttercup_event_linked_page
 		? parseInt( meta._buttercup_event_linked_page, 10 )
 		: 0;
-
-	const startParsed = parseDatetime( startDate );
-	const endParsed = parseDatetime( endDate );
-	const hasEnd = !! endDate;
-
-	const updateMeta = ( key, value ) => {
-		setMeta( { ...meta, [ key ]: value } );
-	};
-
-	const updateStart = ( date, time ) => {
-		updateMeta( '_buttercup_event_start', buildMySQLDatetime( date, time ) );
-	};
-
-	const updateEnd = ( date, time ) => {
-		updateMeta( '_buttercup_event_end', buildMySQLDatetime( date, time ) );
-	};
 
 	// Show/remove an editor-wide notice when a page is linked.
 	const NOTICE_ID = 'buttercup-linked-page-notice';
@@ -244,8 +217,40 @@ export default function EventDetailsPanel() {
 		return () => removeNotice( NOTICE_ID );
 	}, [ linkedPage, linkedPageTitle ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
-	const hasDateError =
-		startDate && endDate && endDate < startDate;
+	if ( postType !== 'buttercup_event' ) {
+		return null;
+	}
+
+	const startDate = meta?._buttercup_event_start || '';
+	const endDate = meta?._buttercup_event_end || '';
+	const startAllDay = meta?._buttercup_event_start_allday === '1';
+	const endAllDay = meta?._buttercup_event_end_allday === '1';
+	const location = meta?._buttercup_event_location || '';
+	const eventUrl = meta?._buttercup_event_url || '';
+	const urlLabel = meta?._buttercup_event_url_label || 'more_info';
+	const pageMode = meta?._buttercup_event_page_mode || 'template';
+	const customSlug = meta?._buttercup_event_custom_slug || '';
+
+	const startParsed = parseDatetime( startDate );
+	const endParsed = parseDatetime( endDate );
+	const hasEnd = !! endDate;
+
+	const updateMeta = ( key, value ) => {
+		setMeta( { ...meta, [ key ]: value } );
+	};
+
+	const updateStart = ( date, time ) => {
+		updateMeta(
+			'_buttercup_event_start',
+			buildMySQLDatetime( date, time )
+		);
+	};
+
+	const updateEnd = ( date, time ) => {
+		updateMeta( '_buttercup_event_end', buildMySQLDatetime( date, time ) );
+	};
+
+	const hasDateError = startDate && endDate && endDate < startDate;
 
 	const pageOptions = pages.map( ( page ) => ( {
 		value: String( page.id ),
@@ -277,7 +282,14 @@ export default function EventDetailsPanel() {
 
 			{ /* ── Start date/time ── */ }
 			<PanelRow>
-				<fieldset style={ { width: '100%', border: 'none', padding: 0, margin: 0 } }>
+				<fieldset
+					style={ {
+						width: '100%',
+						border: 'none',
+						padding: 0,
+						margin: 0,
+					} }
+				>
 					<legend style={ { fontWeight: 600, marginBottom: 8 } }>
 						{ __( 'Start Date', 'buttercup' ) }
 					</legend>
@@ -297,10 +309,16 @@ export default function EventDetailsPanel() {
 					{ startParsed.date && (
 						<>
 							<CheckboxControl
-								label={ __( 'All day (no specific time)', 'buttercup' ) }
+								label={ __(
+									'All day (no specific time)',
+									'buttercup'
+								) }
 								checked={ startAllDay }
 								onChange={ ( val ) => {
-									updateMeta( '_buttercup_event_start_allday', val ? '1' : '' );
+									updateMeta(
+										'_buttercup_event_start_allday',
+										val ? '1' : ''
+									);
 									if ( val ) {
 										updateStart( startParsed.date, '' );
 									}
@@ -313,7 +331,10 @@ export default function EventDetailsPanel() {
 									type="time"
 									value={ startParsed.time }
 									onChange={ ( e ) =>
-										updateStart( startParsed.date, e.target.value )
+										updateStart(
+											startParsed.date,
+											e.target.value
+										)
 									}
 									style={ { ...inputStyle, marginTop: 8 } }
 								/>
@@ -326,7 +347,10 @@ export default function EventDetailsPanel() {
 								style={ { marginTop: 4 } }
 								onClick={ () => {
 									updateMeta( '_buttercup_event_start', '' );
-									updateMeta( '_buttercup_event_start_allday', '' );
+									updateMeta(
+										'_buttercup_event_start_allday',
+										''
+									);
 								} }
 							>
 								{ __( 'Clear start', 'buttercup' ) }
@@ -338,7 +362,14 @@ export default function EventDetailsPanel() {
 
 			{ /* ── End date/time ── */ }
 			<PanelRow>
-				<fieldset style={ { width: '100%', border: 'none', padding: 0, margin: 0 } }>
+				<fieldset
+					style={ {
+						width: '100%',
+						border: 'none',
+						padding: 0,
+						margin: 0,
+					} }
+				>
 					<CheckboxControl
 						label={ __( 'Add end date/time', 'buttercup' ) }
 						checked={ hasEnd }
@@ -348,7 +379,9 @@ export default function EventDetailsPanel() {
 								updateMeta( '_buttercup_event_end_allday', '' );
 							} else {
 								// Default end to the current start date.
-								const defaultDate = startParsed.date || new Date().toISOString().slice( 0, 10 );
+								const defaultDate =
+									startParsed.date ||
+									new Date().toISOString().slice( 0, 10 );
 								updateEnd( defaultDate, endAllDay ? '' : '' );
 							}
 						} }
@@ -357,7 +390,13 @@ export default function EventDetailsPanel() {
 
 					{ hasEnd && (
 						<div style={ { marginTop: 8 } }>
-							<legend style={ { fontWeight: 600, marginBottom: 8, display: 'block' } }>
+							<legend
+								style={ {
+									fontWeight: 600,
+									marginBottom: 8,
+									display: 'block',
+								} }
+							>
 								{ __( 'End Date', 'buttercup' ) }
 							</legend>
 
@@ -374,10 +413,16 @@ export default function EventDetailsPanel() {
 							/>
 
 							<CheckboxControl
-								label={ __( 'All day (no specific time)', 'buttercup' ) }
+								label={ __(
+									'All day (no specific time)',
+									'buttercup'
+								) }
 								checked={ endAllDay }
 								onChange={ ( val ) => {
-									updateMeta( '_buttercup_event_end_allday', val ? '1' : '' );
+									updateMeta(
+										'_buttercup_event_end_allday',
+										val ? '1' : ''
+									);
 									if ( val ) {
 										updateEnd( endParsed.date, '' );
 									}
@@ -390,7 +435,10 @@ export default function EventDetailsPanel() {
 									type="time"
 									value={ endParsed.time }
 									onChange={ ( e ) =>
-										updateEnd( endParsed.date, e.target.value )
+										updateEnd(
+											endParsed.date,
+											e.target.value
+										)
 									}
 									style={ { ...inputStyle, marginTop: 8 } }
 								/>
@@ -443,24 +491,44 @@ export default function EventDetailsPanel() {
 						label={ __( 'Button Label', 'buttercup' ) }
 						value={ urlLabel === 'custom' ? 'custom' : urlLabel }
 						options={ [
-							{ label: __( 'More Info', 'buttercup' ), value: 'more_info' },
-							{ label: __( 'Get Tickets', 'buttercup' ), value: 'get_tickets' },
-							{ label: __( 'Register', 'buttercup' ), value: 'register' },
-							{ label: __( 'Custom...', 'buttercup' ), value: 'custom' },
+							{
+								label: __( 'More Info', 'buttercup' ),
+								value: 'more_info',
+							},
+							{
+								label: __( 'Get Tickets', 'buttercup' ),
+								value: 'get_tickets',
+							},
+							{
+								label: __( 'Register', 'buttercup' ),
+								value: 'register',
+							},
+							{
+								label: __( 'Custom…', 'buttercup' ),
+								value: 'custom',
+							},
 						] }
 						onChange={ ( value ) =>
 							updateMeta( '_buttercup_event_url_label', value )
 						}
-						help={ __( 'Text shown on the event page button.', 'buttercup' ) }
+						help={ __(
+							'Text shown on the event page button.',
+							'buttercup'
+						) }
 						__nextHasNoMarginBottom
 					/>
 
 					{ urlLabel === 'custom' && (
 						<TextControl
 							label={ __( 'Custom Button Text', 'buttercup' ) }
-							value={ meta?._buttercup_event_url_label_custom || '' }
+							value={
+								meta?._buttercup_event_url_label_custom || ''
+							}
 							onChange={ ( value ) =>
-								updateMeta( '_buttercup_event_url_label_custom', value )
+								updateMeta(
+									'_buttercup_event_url_label_custom',
+									value
+								)
 							}
 							placeholder={ __( 'e.g. RSVP Now', 'buttercup' ) }
 							__nextHasNoMarginBottom
@@ -527,9 +595,7 @@ export default function EventDetailsPanel() {
 								'buttercup'
 							) }
 							value={
-								isChangingPage
-									? ''
-									: linkedPage
+								! isChangingPage && linkedPage
 									? String( linkedPage )
 									: ''
 							}

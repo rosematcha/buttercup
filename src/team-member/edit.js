@@ -80,8 +80,12 @@ export default function Edit( {
 	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const teamDefaults = window.buttercupDefaults?.team || {};
-	const imageShape = context[ 'buttercup/imageShape' ] || teamDefaults.imageShape || 'circle';
-	const imageSize = context[ 'buttercup/imageSize' ] || teamDefaults.imageSize || 120;
+	const imageShape =
+		context[ 'buttercup/imageShape' ] ||
+		teamDefaults.imageShape ||
+		'circle';
+	const imageSize =
+		context[ 'buttercup/imageSize' ] || teamDefaults.imageSize || 120;
 	const showBioFromParent = context[ 'buttercup/showBio' ] !== false;
 	const showPronounsFromParent =
 		context[ 'buttercup/showPronouns' ] !== false;

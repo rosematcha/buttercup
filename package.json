@@ -5,6 +5,7 @@
 	"main": "index.js",
 	"files": [
 		"buttercup.php",
+		"uninstall.php",
 		"includes",
 		"build",
 		"templates",

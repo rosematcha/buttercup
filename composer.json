@@ -12,6 +12,9 @@
     "test:php": "vendor/bin/phpunit --testsuite integration"
   },
   "config": {
-    "sort-packages": true
+    "sort-packages": true,
+    "platform": {
+      "php": "8.2"
+    }
   }
 }

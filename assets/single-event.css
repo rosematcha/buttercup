@@ -1,16 +1,10 @@
-/* ── Shared focus styles ── */
+/* stylelint-disable no-descending-specificity */
 
-.buttercup-single-event a:focus-visible,
-.buttercup-events-archive a:focus-visible {
-	outline: 2px solid #2271b1;
-	outline-offset: 2px;
-	border-radius: 2px;
-}
+/* This file contains multiple page sections (.buttercup-single-event and    */
 
-.buttercup-single-event__cta-button:focus-visible {
-	outline: 2px solid #2271b1;
-	outline-offset: 2px;
-}
+/* .buttercup-events-archive) each with their own `a` / `a:hover` rules.    */
+
+/* Selectors across sections are mutually exclusive in the DOM.              */
 
 /* ── Single event page ── */
 
@@ -218,6 +212,7 @@
 
 /* Single event responsive */
 @media (max-width: 600px) {
+
 	.buttercup-single-event__title {
 		font-size: 1.5em;
 	}
@@ -448,6 +443,7 @@
 
 /* Tablet breakpoint */
 @media (max-width: 768px) {
+
 	.buttercup-events-archive .buttercup-events__image {
 		width: 180px;
 	}
@@ -467,6 +463,7 @@
 
 /* Mobile breakpoint */
 @media (max-width: 600px) {
+
 	.buttercup-events-archive__header {
 		flex-direction: column;
 		align-items: flex-start;
@@ -502,4 +499,19 @@
 	.buttercup-events-archive .buttercup-events__title {
 		font-size: 1.15em;
 	}
+}
+
+/* ── Shared focus styles ── */
+
+/* Placed after all `a` rules to satisfy no-descending-specificity. */
+.buttercup-single-event a:focus-visible,
+.buttercup-events-archive a:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+	border-radius: 2px;
+}
+
+.buttercup-single-event__cta-button:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
 }

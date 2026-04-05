@@ -18,6 +18,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - Facebook sync now sends access token via Authorization header instead of URL query string
+- JS lint errors in `event-details-panel.js`: JSDoc alignment, `@returns` → `@return`, missing braces, missing `@param` for `LinkedPageCard`, unused variable, conditional hook call, nested ternary
+- Nested ternary in `homepage-feed/edit.js` (introduced by prettier autofix)
+- Composer lock file: pin `doctrine/instantiator` to PHP 8.2-compatible version via platform config
 
 ### Changed
 - Homepage feed, tag showcase, and team blocks now pull defaults from plugin settings

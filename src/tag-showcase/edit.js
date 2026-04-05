@@ -569,7 +569,10 @@ export default function Edit( { attributes, setAttributes } ) {
 						onChange={ ( value ) =>
 							setAttributes( { buttonLabel: value } )
 						}
-						placeholder={ showcaseDefaults.buttonLabel || __( 'Read More', 'buttercup' ) }
+						placeholder={
+							showcaseDefaults.buttonLabel ||
+							__( 'Read More', 'buttercup' )
+						}
 						help={ __(
 							'Used when button display is enabled.',
 							'buttercup'
