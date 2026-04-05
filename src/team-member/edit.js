@@ -500,6 +500,7 @@ export default function Edit( {
 									variant="tertiary"
 									onClick={ () => removeSocialLink( index ) }
 									aria-label={ sprintf(
+										/* translators: %s: social platform name (e.g. "twitter") */
 										__( 'Remove %s link', 'buttercup' ),
 										link.platform
 									) }
@@ -711,6 +712,7 @@ export default function Edit( {
 									alt={
 										profileImageAlt ||
 										sprintf(
+										/* translators: %s: team member's name */
 											__( 'Photo of %s', 'buttercup' ),
 											name ||
 												__( 'team member', 'buttercup' )

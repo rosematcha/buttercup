@@ -1,4 +1,6 @@
 <?php
+// This file is the PHPUnit bootstrap for integration tests and is not loaded by WordPress.
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals
 
 declare(strict_types=1);
 

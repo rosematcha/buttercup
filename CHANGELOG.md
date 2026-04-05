@@ -11,10 +11,12 @@ All notable changes to this project will be documented in this file.
 ### Added
 - PHPCS (`phpcs.xml`) with WordPress and PHPCompatibilityWP rulesets; `composer lint:php` script
 - CI jobs for PHPCS and the WordPress Plugin Checker (`wordpress/plugin-check-action`)
+- `/* translators: */` comments on all JS `__()` calls with printf-style placeholders
 
 ### Fixed
 - Fix test slug case mismatch: force generated page slug to lowercase to match WordPress post_name storage
 - Fix `trim()` deprecation on PHP 8.2: guard `wp_parse_url()` null return with `?? ''` in member-pages path stripping
+- Update `readme.txt` "Tested up to" to 6.9
 - Remove `Update URI` header (not allowed for WordPress.org-hosted plugins)
 - Add output escaping (`esc_html__`, `esc_attr`, `wp_kses_post`, `intval`) across events, member pages, and import wizards
 - Add `wp_unslash()` before sanitization on all `$_POST`/`$_SERVER` superglobal reads

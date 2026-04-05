@@ -87,6 +87,7 @@ export default function save( { attributes } ) {
 								alt={
 									profileImageAlt ||
 									sprintf(
+										/* translators: %s: team member's name */
 										__( 'Photo of %s', 'buttercup' ),
 										name || __( 'team member', 'buttercup' )
 									)
@@ -110,6 +111,7 @@ export default function save( { attributes } ) {
 							alt={
 								profileImageAlt ||
 								sprintf(
+									/* translators: %s: team member's name */
 									__( 'Photo of %s', 'buttercup' ),
 									name || __( 'team member', 'buttercup' )
 								)
@@ -200,6 +202,7 @@ export default function save( { attributes } ) {
 								>
 									<span className="screen-reader-text">
 										{ sprintf(
+											/* translators: 1: team member's name, 2: social platform name */
 											__( '%s on %s', 'buttercup' ),
 											name ||
 												__(

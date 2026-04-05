@@ -2,7 +2,7 @@
 Contributors: developreese
 Tags: blocks, events, gutenberg
 Requires at least: 5.3
-Tested up to: 6.8
+Tested up to: 6.9
 Requires PHP: 7.2
 Stable tag: 1.0.0
 License: GPLv2 or later
