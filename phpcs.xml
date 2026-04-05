@@ -19,27 +19,42 @@
     <config name="testVersion" value="7.2-"/>
     <config name="text_domain" value="buttercup"/>
 
+    <!--
+        The project's PHP style (4-space indent, Allman braces, non-Yoda
+        conditions, compact operator spacing, short arrays / ternaries, //
+        function comments) intentionally diverges from WordPress-Core
+        formatting.  We include the full WordPress ruleset and then exclude
+        every pure-formatting / docs sniff that conflicts, retaining all
+        substantive checks: security, escaping, i18n, capability checks,
+        database best practices, and PHP compatibility.
+    -->
+
     <rule ref="WordPress">
-        <!-- Project uses procedural includes, not class-per-file convention -->
+        <!-- ── Filename conventions (procedural includes) ── -->
         <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
         <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
 
-        <!--
-            The following rules enforce WordPress whitespace style, which conflicts
-            with the project's established conventions (4-space indent, compact
-            paren spacing, short array syntax). The substantive checks — security,
-            escaping, i18n, capability checks — are retained.
-        -->
-
-        <!-- Project uses 4-space indentation, not tabs -->
+        <!-- ── Indentation & whitespace ── -->
         <exclude name="Generic.WhiteSpace.DisallowSpaceIndent"/>
-
-        <!-- Project uses short array syntax [] throughout -->
-        <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
-
-        <!-- Project uses compact spacing: if(!x) and func($arg), not if ( !x ) / func( $arg ) -->
+        <exclude name="Generic.WhiteSpace.ArbitraryParenthesesSpacing"/>
         <exclude name="WordPress.WhiteSpace.ControlStructureSpacing"/>
+        <exclude name="WordPress.WhiteSpace.OperatorSpacing"/>
         <exclude name="PEAR.Functions.FunctionCallSignature"/>
+        <exclude name="Generic.Formatting.MultipleStatementAlignment"/>
+
+        <!-- ── Brace style (project uses Allman, not K&R) ── -->
+        <exclude name="Generic.Functions.OpeningFunctionBraceKernighanRitchie"/>
+
+        <!-- ── Array & ternary syntax ── -->
+        <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+        <exclude name="Universal.Operators.DisallowShortTernary"/>
+
+        <!-- ── Condition style (project uses non-Yoda) ── -->
+        <exclude name="WordPress.PHP.YodaConditions"/>
+
+        <!-- ── Comment / doc style ── -->
+        <exclude name="Squiz.Commenting.FunctionComment.WrongStyle"/>
+        <exclude name="Squiz.Commenting.FileComment.MissingPackageTag"/>
     </rule>
 
     <rule ref="PHPCompatibilityWP"/>
