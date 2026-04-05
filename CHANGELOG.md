@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - Fix test slug case mismatch: force generated page slug to lowercase to match WordPress post_name storage
+- Add ABSPATH guard to `uninstall.php` for plugin checker direct-access check
+- Exclude `package.json`, `package-lock.json`, and `docs` from plugin checker to fix "Application files" error
 - Fix `trim()` deprecation on PHP 8.2: guard `wp_parse_url()` null return with `?? ''` in member-pages path stripping
 - Update `readme.txt` "Tested up to" to 6.9
 - Remove `Update URI` header (not allowed for WordPress.org-hosted plugins)

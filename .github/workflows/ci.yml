@@ -86,7 +86,7 @@ jobs:
         uses: wordpress/plugin-check-action@v1
         with:
           # Exclude dev-only files that would not be present in a plugin ZIP.
-          exclude-files: .eslintrc.js,.editorconfig,.gitignore,phpunit.xml.dist,phpcs.xml,bin,tests,.github,CLAUDE.md,CHANGELOG.md,composer.json,composer.lock
+          exclude-files: .eslintrc.js,.editorconfig,.gitignore,phpunit.xml.dist,phpcs.xml,bin,tests,.github,CLAUDE.md,CHANGELOG.md,composer.json,composer.lock,package.json,package-lock.json,docs
 
   php-integration:
     name: PHP Integration Tests
