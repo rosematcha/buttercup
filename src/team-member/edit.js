@@ -712,8 +712,8 @@ export default function Edit( {
 									alt={
 										profileImageAlt ||
 										sprintf(
-												/* translators: %s: team member's name */
-												__( 'Photo of %s', 'buttercup' ),
+											/* translators: %s: team member's name */
+											__( 'Photo of %s', 'buttercup' ),
 											name ||
 												__( 'team member', 'buttercup' )
 										)
