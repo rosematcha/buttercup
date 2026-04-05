@@ -35,7 +35,8 @@ uninstall.php          Cleanup handler — runs when the plugin is deleted
 
 - `npm start` — watch mode for block JS/CSS (runs two wp-scripts processes)
 - `npm run build` — production build
-- `npm run lint:js` / `npm run lint:css` — linting
+- `npm run lint:js` / `npm run lint:css` — JS/CSS linting
+- `composer lint:php` — PHP linting (WordPress Coding Standards + PHP compatibility)
 - `npm run plugin-zip` — creates `buttercup.zip` for distribution
 - `composer test:php` — runs PHPUnit integration tests (requires local WP test suite)
 
@@ -43,7 +44,7 @@ The build uses `@wordpress/scripts`. The `events-meta` block has a separate entr
 
 ## Code style
 
-- PHP: 4-space indent, WordPress-style function naming (`buttercup_` prefix), no namespaces
+- PHP follows the [WordPress Coding Standards](https://developer.wordpress.org/coding-standards/wordpress-coding-standards/php/): tabs for indentation, Yoda conditions, K&R braces, spaces inside parentheses, `array()` not `[]`, `/** */` doc blocks on every function, `buttercup_` prefix on all globals, no namespaces. Enforced by PHPCS via `phpcs.xml` / `composer lint:php`.
 - JS: tabs, follows `@wordpress/scripts` ESLint config (`.eslintrc.js`)
 - All user-facing PHP strings must be wrapped in `__()` or `esc_html__()` with text domain `'buttercup'`
 - Output escaping is mandatory — use `esc_html()`, `esc_attr()`, `esc_url()`, `wp_kses_post()` as appropriate

@@ -1,7 +1,12 @@
 <?php
+/**
+ * Event template filters, rewrite rules, and date formatting.
+ *
+ * @package Buttercup
+ */
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 /* ── Page mode helpers ── */
@@ -12,13 +17,12 @@ if (!defined('ABSPATH')) {
  * @param int $post_id Event post ID.
  * @return string 'template', 'editor', or 'standalone'.
  */
-function buttercup_get_event_page_mode($post_id)
-{
-    $mode = get_post_meta($post_id, '_buttercup_event_page_mode', true);
-    if (in_array($mode, ['editor', 'standalone'], true)) {
-        return $mode;
-    }
-    return 'template';
+function buttercup_get_event_page_mode( $post_id ) {
+	$mode = get_post_meta( $post_id, '_buttercup_event_page_mode', true );
+	if ( in_array( $mode, array( 'editor', 'standalone' ), true ) ) {
+		return $mode;
+	}
+	return 'template';
 }
 
 /* ── Single template filter ── */
@@ -26,57 +30,64 @@ function buttercup_get_event_page_mode($post_id)
 /**
  * Filter the single template for buttercup_event posts.
  * Only applies the TEC-style template when page mode is 'template'.
+ *
+ * @param string $template Path to the template file.
+ * @return string Filtered template path.
  */
-function buttercup_event_single_template($template)
-{
-    if (!is_singular('buttercup_event')) {
-        return $template;
-    }
+function buttercup_event_single_template( $template ) {
+	if ( ! is_singular( 'buttercup_event' ) ) {
+		return $template;
+	}
 
-    $mode = buttercup_get_event_page_mode(get_the_ID());
+	$mode = buttercup_get_event_page_mode( get_the_ID() );
 
-    // 'editor' and 'standalone' modes use the theme's default template
-    // so the block editor content renders with full control.
-    if ($mode !== 'template') {
-        return $template;
-    }
+	// 'editor' and 'standalone' modes use the theme's default template
+	// so the block editor content renders with full control.
+	if ( 'template' !== $mode ) {
+		return $template;
+	}
 
-    // If the theme provides a template, defer to it.
-    $theme_template = locate_template('single-buttercup_event.php');
-    if ($theme_template) {
-        return $theme_template;
-    }
+	// If the theme provides a template, defer to it.
+	$theme_template = locate_template( 'single-buttercup_event.php' );
+	if ( $theme_template ) {
+		return $theme_template;
+	}
 
-    $plugin_template = BUTTERCUP_PLUGIN_DIR . '/templates/single-buttercup_event.php';
-    if (file_exists($plugin_template)) {
-        return $plugin_template;
-    }
+	$plugin_template = BUTTERCUP_PLUGIN_DIR . '/templates/single-buttercup_event.php';
+	if ( file_exists( $plugin_template ) ) {
+		return $plugin_template;
+	}
 
-    return $template;
+	return $template;
 }
-add_filter('single_template', 'buttercup_event_single_template');
+add_filter( 'single_template', 'buttercup_event_single_template' );
 
 /* ── Archive template filter ── */
 
-function buttercup_event_archive_template($template)
-{
-    if (!is_post_type_archive('buttercup_event')) {
-        return $template;
-    }
+/**
+ * Filter the archive template for buttercup_event posts.
+ *
+ * @param string $template Path to the template file.
+ * @return string Filtered template path.
+ */
+function buttercup_event_archive_template( $template ) {
+	if ( ! is_post_type_archive( 'buttercup_event' ) ) {
+		return $template;
+	}
 
-    $theme_template = locate_template('archive-buttercup_event.php');
-    if ($theme_template) {
-        return $theme_template;
-    }
+	$theme_template = locate_template( 'archive-buttercup_event.php' );
+	if ( $theme_template ) {
+		return $theme_template;
+	}
 
-    $plugin_template = BUTTERCUP_PLUGIN_DIR . '/templates/archive-buttercup_event.php';
-    if (file_exists($plugin_template)) {
-        return $plugin_template;
-    }
+	$plugin_template = BUTTERCUP_PLUGIN_DIR . '/templates/archive-buttercup_event.php';
+	if ( file_exists( $plugin_template ) ) {
+		return $plugin_template;
+	}
 
-    return $template;
+	return $template;
 }
-add_filter('archive_template', 'buttercup_event_archive_template');
+add_filter( 'archive_template', 'buttercup_event_archive_template' );
 
 /* ── Standalone event rewrite rules ── */
 
@@ -84,146 +95,153 @@ add_filter('archive_template', 'buttercup_event_archive_template');
  * Get the map of custom slugs → event post IDs for standalone events.
  * Stored as an option for performance (no DB query on every page load).
  */
-function buttercup_get_standalone_event_slugs()
-{
-    return (array) get_option('_buttercup_standalone_slugs', []);
+function buttercup_get_standalone_event_slugs() {
+	return (array) get_option( '_buttercup_standalone_slugs', array() );
 }
 
 /**
  * Register rewrite rules for standalone events (root-level URLs).
  */
-function buttercup_register_standalone_rewrites()
-{
-    $slugs = buttercup_get_standalone_event_slugs();
+function buttercup_register_standalone_rewrites() {
+	$slugs = buttercup_get_standalone_event_slugs();
 
-    foreach ($slugs as $slug => $post_id) {
-        add_rewrite_rule(
-            '^' . preg_quote($slug, '/') . '/?$',
-            'index.php?post_type=buttercup_event&p=' . intval($post_id),
-            'top'
-        );
-    }
+	foreach ( $slugs as $slug => $post_id ) {
+		add_rewrite_rule(
+			'^' . preg_quote( $slug, '/' ) . '/?$',
+			'index.php?post_type=buttercup_event&p=' . intval( $post_id ),
+			'top'
+		);
+	}
 }
-add_action('init', 'buttercup_register_standalone_rewrites', 20);
+add_action( 'init', 'buttercup_register_standalone_rewrites', 20 );
 
 /**
  * Filter the permalink for standalone events to use root-level URLs.
+ *
+ * @param string  $post_link The post's permalink.
+ * @param WP_Post $post      The post object.
+ * @return string Filtered permalink.
  */
-function buttercup_event_permalink($post_link, $post)
-{
-    if ($post->post_type !== 'buttercup_event') {
-        return $post_link;
-    }
+function buttercup_event_permalink( $post_link, $post ) {
+	if ( 'buttercup_event' !== $post->post_type ) {
+		return $post_link;
+	}
 
-    $mode = get_post_meta($post->ID, '_buttercup_event_page_mode', true);
-    if ($mode !== 'standalone') {
-        return $post_link;
-    }
+	$mode = get_post_meta( $post->ID, '_buttercup_event_page_mode', true );
+	if ( 'standalone' !== $mode ) {
+		return $post_link;
+	}
 
-    // If linked to an existing page, use that page's permalink.
-    $linked_page = absint(get_post_meta($post->ID, '_buttercup_event_linked_page', true));
-    if ($linked_page && get_post_status($linked_page) === 'publish') {
-        return get_permalink($linked_page);
-    }
+	// If linked to an existing page, use that page's permalink.
+	$linked_page = absint( get_post_meta( $post->ID, '_buttercup_event_linked_page', true ) );
+	if ( $linked_page && get_post_status( $linked_page ) === 'publish' ) {
+		return get_permalink( $linked_page );
+	}
 
-    // Otherwise fall back to custom root slug.
-    $custom_slug = get_post_meta($post->ID, '_buttercup_event_custom_slug', true);
-    if (!$custom_slug) {
-        return $post_link;
-    }
+	// Otherwise fall back to custom root slug.
+	$custom_slug = get_post_meta( $post->ID, '_buttercup_event_custom_slug', true );
+	if ( ! $custom_slug ) {
+		return $post_link;
+	}
 
-    return home_url('/' . $custom_slug . '/');
+	return home_url( '/' . $custom_slug . '/' );
 }
-add_filter('post_type_link', 'buttercup_event_permalink', 10, 2);
+add_filter( 'post_type_link', 'buttercup_event_permalink', 10, 2 );
 
 /**
  * Auto-publish events that link to an existing page.
  * The real content lives on the linked page, so there's nothing to draft.
+ *
+ * @param int $post_id The event post ID.
  */
-function buttercup_auto_publish_linked_events($post_id)
-{
-    if (wp_is_post_revision($post_id) || wp_is_post_autosave($post_id)) {
-        return;
-    }
-    if (get_post_type($post_id) !== 'buttercup_event') {
-        return;
-    }
+function buttercup_auto_publish_linked_events( $post_id ) {
+	if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
+		return;
+	}
+	if ( get_post_type( $post_id ) !== 'buttercup_event' ) {
+		return;
+	}
 
-    $linked = absint(get_post_meta($post_id, '_buttercup_event_linked_page', true));
-    if (!$linked) {
-        return;
-    }
+	$linked = absint( get_post_meta( $post_id, '_buttercup_event_linked_page', true ) );
+	if ( ! $linked ) {
+		return;
+	}
 
-    $post = get_post($post_id);
-    if ($post && $post->post_status === 'draft') {
-        // Unhook to avoid infinite loop, publish, re-hook.
-        remove_action('save_post_buttercup_event', 'buttercup_auto_publish_linked_events');
-        wp_publish_post($post_id);
-        add_action('save_post_buttercup_event', 'buttercup_auto_publish_linked_events');
-    }
+	$post = get_post( $post_id );
+	if ( $post && 'draft' === $post->post_status ) {
+		// Unhook to avoid infinite loop, publish, re-hook.
+		remove_action( 'save_post_buttercup_event', 'buttercup_auto_publish_linked_events' );
+		wp_publish_post( $post_id );
+		add_action( 'save_post_buttercup_event', 'buttercup_auto_publish_linked_events' );
+	}
 }
-add_action('save_post_buttercup_event', 'buttercup_auto_publish_linked_events');
+add_action( 'save_post_buttercup_event', 'buttercup_auto_publish_linked_events' );
 
 /**
  * Rebuild the standalone slugs option when an event is saved.
+ *
+ * @param int $post_id The event post ID.
  */
-function buttercup_update_standalone_slugs($post_id)
-{
-    if (wp_is_post_revision($post_id) || wp_is_post_autosave($post_id)) {
-        return;
-    }
-    if (get_post_type($post_id) !== 'buttercup_event') {
-        return;
-    }
+function buttercup_update_standalone_slugs( $post_id ) {
+	if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
+		return;
+	}
+	if ( get_post_type( $post_id ) !== 'buttercup_event' ) {
+		return;
+	}
 
-    // Rebuild the full map (not just this post, in case slug was removed).
-    $query = new WP_Query([
-        'post_type'      => 'buttercup_event',
-        'posts_per_page' => -1,
-        'post_status'    => 'publish',
-        'meta_query'     => [
-            [
-                'key'   => '_buttercup_event_page_mode',
-                'value' => 'standalone',
-            ],
-        ],
-        'fields' => 'ids',
-    ]);
+	// Rebuild the full map (not just this post, in case slug was removed).
+	$query = new WP_Query(
+		array(
+			'post_type'      => 'buttercup_event',
+			'posts_per_page' => -1,
+			'post_status'    => 'publish',
+			'meta_query'     => array(
+				array(
+					'key'   => '_buttercup_event_page_mode',
+					'value' => 'standalone',
+				),
+			),
+			'fields'         => 'ids',
+		)
+	);
 
-    $slugs = [];
-    foreach ($query->posts as $id) {
-        $slug = get_post_meta($id, '_buttercup_event_custom_slug', true);
-        if ($slug) {
-            $slugs[sanitize_title($slug)] = $id;
-        }
-    }
+	$slugs = array();
+	foreach ( $query->posts as $id ) {
+		$slug = get_post_meta( $id, '_buttercup_event_custom_slug', true );
+		if ( $slug ) {
+			$slugs[ sanitize_title( $slug ) ] = $id;
+		}
+	}
 
-    $old = get_option('_buttercup_standalone_slugs', []);
-    if ($slugs !== $old) {
-        update_option('_buttercup_standalone_slugs', $slugs, false);
-        buttercup_schedule_rewrite_flush();
-    }
+	$old = get_option( '_buttercup_standalone_slugs', array() );
+	if ( $slugs !== $old ) {
+		update_option( '_buttercup_standalone_slugs', $slugs, false );
+		buttercup_schedule_rewrite_flush();
+	}
 }
-add_action('save_post_buttercup_event', 'buttercup_update_standalone_slugs');
-add_action('trashed_post', 'buttercup_update_standalone_slugs');
-add_action('untrashed_post', 'buttercup_update_standalone_slugs');
+add_action( 'save_post_buttercup_event', 'buttercup_update_standalone_slugs' );
+add_action( 'trashed_post', 'buttercup_update_standalone_slugs' );
+add_action( 'untrashed_post', 'buttercup_update_standalone_slugs' );
 
 /* ── Frontend styles ── */
 
-function buttercup_event_frontend_styles()
-{
-    if (!is_singular('buttercup_event') && !is_post_type_archive('buttercup_event')) {
-        return;
-    }
+/**
+ * Enqueue frontend styles for single and archive event pages.
+ */
+function buttercup_event_frontend_styles() {
+	if ( ! is_singular( 'buttercup_event' ) && ! is_post_type_archive( 'buttercup_event' ) ) {
+		return;
+	}
 
-    wp_enqueue_style(
-        'buttercup-single-event',
-        plugins_url('/assets/single-event.css', dirname(__FILE__)),
-        [],
-        filemtime(BUTTERCUP_PLUGIN_DIR . '/assets/single-event.css')
-    );
+	wp_enqueue_style(
+		'buttercup-single-event',
+		plugins_url( '/assets/single-event.css', __DIR__ ),
+		array(),
+		filemtime( BUTTERCUP_PLUGIN_DIR . '/assets/single-event.css' )
+	);
 }
-add_action('wp_enqueue_scripts', 'buttercup_event_frontend_styles');
+add_action( 'wp_enqueue_scripts', 'buttercup_event_frontend_styles' );
 
 /* ── Date formatting ── */
 
@@ -238,18 +256,17 @@ add_action('wp_enqueue_scripts', 'buttercup_event_frontend_styles');
  * @param string $datetime_str MySQL-style datetime "YYYY-MM-DD HH:MM:SS".
  * @return int|false Unix timestamp, or false on failure.
  */
-function buttercup_event_timestamp($datetime_str)
-{
-    if (!$datetime_str) {
-        return false;
-    }
-    $tz = wp_timezone();
-    $dt = DateTime::createFromFormat('Y-m-d H:i:s', $datetime_str, $tz);
-    if ($dt) {
-        return $dt->getTimestamp();
-    }
-    // Fallback for any non-standard format.
-    return strtotime($datetime_str);
+function buttercup_event_timestamp( $datetime_str ) {
+	if ( ! $datetime_str ) {
+		return false;
+	}
+	$tz = wp_timezone();
+	$dt = DateTime::createFromFormat( 'Y-m-d H:i:s', $datetime_str, $tz );
+	if ( $dt ) {
+		return $dt->getTimestamp();
+	}
+	// Fallback for any non-standard format.
+	return strtotime( $datetime_str );
 }
 
 /**
@@ -261,66 +278,65 @@ function buttercup_event_timestamp($datetime_str)
  * @param bool   $end_allday   Whether the end has no specific time.
  * @return string Formatted date range.
  */
-function buttercup_format_event_date_range($start, $end = '', $start_allday = false, $end_allday = false)
-{
-    if (!$start) {
-        return '';
-    }
+function buttercup_format_event_date_range( $start, $end = '', $start_allday = false, $end_allday = false ) {
+	if ( ! $start ) {
+		return '';
+	}
 
-    $start_ts = buttercup_event_timestamp($start);
-    if (!$start_ts) {
-        return '';
-    }
+	$start_ts = buttercup_event_timestamp( $start );
+	if ( ! $start_ts ) {
+		return '';
+	}
 
-    $date_format = get_option('date_format', 'F j, Y');
-    $time_format = get_option('time_format', 'g:i a');
+	$date_format = get_option( 'date_format', 'F j, Y' );
+	$time_format = get_option( 'time_format', 'g:i a' );
 
-    $start_date = wp_date($date_format, $start_ts);
+	$start_date = wp_date( $date_format, $start_ts );
 
-    if ($start_allday) {
-        if (!$end) {
-            return $start_date;
-        }
-        $end_ts = buttercup_event_timestamp($end);
-        if (!$end_ts) {
-            return $start_date;
-        }
-        $end_date = wp_date($date_format, $end_ts);
-        if ($start_date === $end_date) {
-            return $start_date;
-        }
-        return $start_date . ' - ' . $end_date;
-    }
+	if ( $start_allday ) {
+		if ( ! $end ) {
+			return $start_date;
+		}
+		$end_ts = buttercup_event_timestamp( $end );
+		if ( ! $end_ts ) {
+			return $start_date;
+		}
+		$end_date = wp_date( $date_format, $end_ts );
+		if ( $start_date === $end_date ) {
+			return $start_date;
+		}
+		return $start_date . ' - ' . $end_date;
+	}
 
-    $start_time = wp_date($time_format, $start_ts);
+	$start_time = wp_date( $time_format, $start_ts );
 
-    if (!$end) {
-        return $start_date . ' @ ' . $start_time;
-    }
+	if ( ! $end ) {
+		return $start_date . ' @ ' . $start_time;
+	}
 
-    $end_ts = buttercup_event_timestamp($end);
-    if (!$end_ts) {
-        return $start_date . ' @ ' . $start_time;
-    }
+	$end_ts = buttercup_event_timestamp( $end );
+	if ( ! $end_ts ) {
+		return $start_date . ' @ ' . $start_time;
+	}
 
-    $end_date = wp_date($date_format, $end_ts);
+	$end_date = wp_date( $date_format, $end_ts );
 
-    if ($end_allday) {
-        if ($start_date === $end_date) {
-            return $start_date . ' @ ' . $start_time;
-        }
-        return $start_date . ' @ ' . $start_time . ' - ' . $end_date;
-    }
+	if ( $end_allday ) {
+		if ( $start_date === $end_date ) {
+			return $start_date . ' @ ' . $start_time;
+		}
+		return $start_date . ' @ ' . $start_time . ' - ' . $end_date;
+	}
 
-    $end_time = wp_date($time_format, $end_ts);
+	$end_time = wp_date( $time_format, $end_ts );
 
-    // Same day: "April 3 @ 6:00 pm - 8:00 pm"
-    if ($start_date === $end_date) {
-        return $start_date . ' @ ' . $start_time . ' - ' . $end_time;
-    }
+	// Same day: "April 3 @ 6:00 pm - 8:00 pm".
+	if ( $start_date === $end_date ) {
+		return $start_date . ' @ ' . $start_time . ' - ' . $end_time;
+	}
 
-    // Different days: "April 3 @ 6:00 pm - April 4 @ 10:00 pm"
-    return $start_date . ' @ ' . $start_time . ' - ' . $end_date . ' @ ' . $end_time;
+	// Different days: "April 3 @ 6:00 pm - April 4 @ 10:00 pm".
+	return $start_date . ' @ ' . $start_time . ' - ' . $end_date . ' @ ' . $end_time;
 }
 
 /* ── Adjacent event navigation ── */
@@ -332,39 +348,40 @@ function buttercup_format_event_date_range($start, $end = '', $start_allday = fa
  * @param string $direction 'previous' or 'next'.
  * @return int|null Adjacent event post ID, or null.
  */
-function buttercup_get_adjacent_event($post_id, $direction = 'next')
-{
-    $current_start = get_post_meta($post_id, '_buttercup_event_start', true);
-    if (!$current_start) {
-        return null;
-    }
+function buttercup_get_adjacent_event( $post_id, $direction = 'next' ) {
+	$current_start = get_post_meta( $post_id, '_buttercup_event_start', true );
+	if ( ! $current_start ) {
+		return null;
+	}
 
-    $is_next = ($direction === 'next');
+	$is_next = ( 'next' === $direction );
 
-    $query = new WP_Query([
-        'post_type'      => 'buttercup_event',
-        'posts_per_page' => 1,
-        'post_status'    => 'publish',
-        'post__not_in'   => [$post_id],
-        'meta_key'       => '_buttercup_event_start',
-        'orderby'        => 'meta_value',
-        'order'          => $is_next ? 'ASC' : 'DESC',
-        'meta_query'     => [
-            [
-                'key'     => '_buttercup_event_start',
-                'value'   => $current_start,
-                'compare' => $is_next ? '>=' : '<=',
-                'type'    => 'DATETIME',
-            ],
-        ],
-        'fields' => 'ids',
-    ]);
+	$query = new WP_Query(
+		array(
+			'post_type'      => 'buttercup_event',
+			'posts_per_page' => 1,
+			'post_status'    => 'publish',
+			'post__not_in'   => array( $post_id ),
+			'meta_key'       => '_buttercup_event_start',
+			'orderby'        => 'meta_value',
+			'order'          => $is_next ? 'ASC' : 'DESC',
+			'meta_query'     => array(
+				array(
+					'key'     => '_buttercup_event_start',
+					'value'   => $current_start,
+					'compare' => $is_next ? '>=' : '<=',
+					'type'    => 'DATETIME',
+				),
+			),
+			'fields'         => 'ids',
+		)
+	);
 
-    if ($query->have_posts()) {
-        return $query->posts[0];
-    }
+	if ( $query->have_posts() ) {
+		return $query->posts[0];
+	}
 
-    return null;
+	return null;
 }
 
 /* ── Event meta helper ── */
@@ -375,18 +392,17 @@ function buttercup_get_adjacent_event($post_id, $direction = 'next')
  * @param int $post_id The event post ID.
  * @return array Associative array of event meta.
  */
-function buttercup_get_event_meta($post_id)
-{
-    return [
-        'start'        => get_post_meta($post_id, '_buttercup_event_start', true),
-        'end'          => get_post_meta($post_id, '_buttercup_event_end', true),
-        'start_allday' => (bool) get_post_meta($post_id, '_buttercup_event_start_allday', true),
-        'end_allday'   => (bool) get_post_meta($post_id, '_buttercup_event_end_allday', true),
-        'location'     => get_post_meta($post_id, '_buttercup_event_location', true),
-        'facebook_id'  => get_post_meta($post_id, '_buttercup_event_facebook_id', true),
-        'url'          => get_post_meta($post_id, '_buttercup_event_url', true),
-        'url_label'    => buttercup_get_event_url_label($post_id),
-    ];
+function buttercup_get_event_meta( $post_id ) {
+	return array(
+		'start'        => get_post_meta( $post_id, '_buttercup_event_start', true ),
+		'end'          => get_post_meta( $post_id, '_buttercup_event_end', true ),
+		'start_allday' => (bool) get_post_meta( $post_id, '_buttercup_event_start_allday', true ),
+		'end_allday'   => (bool) get_post_meta( $post_id, '_buttercup_event_end_allday', true ),
+		'location'     => get_post_meta( $post_id, '_buttercup_event_location', true ),
+		'facebook_id'  => get_post_meta( $post_id, '_buttercup_event_facebook_id', true ),
+		'url'          => get_post_meta( $post_id, '_buttercup_event_url', true ),
+		'url_label'    => buttercup_get_event_url_label( $post_id ),
+	);
 }
 
 /**
@@ -395,20 +411,19 @@ function buttercup_get_event_meta($post_id)
  * @param int $post_id The event post ID.
  * @return string Human-readable button label.
  */
-function buttercup_get_event_url_label($post_id)
-{
-    $key = get_post_meta($post_id, '_buttercup_event_url_label', true);
+function buttercup_get_event_url_label( $post_id ) {
+	$key = get_post_meta( $post_id, '_buttercup_event_url_label', true );
 
-    $labels = [
-        'more_info'   => __('More Info', 'buttercup'),
-        'get_tickets' => __('Get Tickets', 'buttercup'),
-        'register'    => __('Register', 'buttercup'),
-    ];
+	$labels = array(
+		'more_info'   => __( 'More Info', 'buttercup' ),
+		'get_tickets' => __( 'Get Tickets', 'buttercup' ),
+		'register'    => __( 'Register', 'buttercup' ),
+	);
 
-    if ($key === 'custom') {
-        $custom = get_post_meta($post_id, '_buttercup_event_url_label_custom', true);
-        return $custom ?: $labels['more_info'];
-    }
+	if ( 'custom' === $key ) {
+		$custom = get_post_meta( $post_id, '_buttercup_event_url_label_custom', true );
+		return $custom ? $custom : $labels['more_info'];
+	}
 
-    return $labels[$key] ?? $labels['more_info'];
+	return $labels[ $key ] ?? $labels['more_info'];
 }
