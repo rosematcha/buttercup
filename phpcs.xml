@@ -23,6 +23,23 @@
         <!-- Project uses procedural includes, not class-per-file convention -->
         <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
         <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+
+        <!--
+            The following rules enforce WordPress whitespace style, which conflicts
+            with the project's established conventions (4-space indent, compact
+            paren spacing, short array syntax). The substantive checks — security,
+            escaping, i18n, capability checks — are retained.
+        -->
+
+        <!-- Project uses 4-space indentation, not tabs -->
+        <exclude name="Generic.WhiteSpace.DisallowSpaceIndent"/>
+
+        <!-- Project uses short array syntax [] throughout -->
+        <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+
+        <!-- Project uses compact spacing: if(!x) and func($arg), not if ( !x ) / func( $arg ) -->
+        <exclude name="WordPress.WhiteSpace.ControlStructureSpacing"/>
+        <exclude name="PEAR.Functions.FunctionCallSignature"/>
     </rule>
 
     <rule ref="PHPCompatibilityWP"/>
