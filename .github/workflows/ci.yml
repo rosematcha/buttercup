@@ -85,9 +85,8 @@ jobs:
       - name: WordPress Plugin Check
         uses: wordpress/plugin-check-action@v1
         with:
-          # Exclude checks for dev-only repo artifacts not present in a plugin ZIP,
-          # and the direct filesystem check which fires on the test bootstrap's fwrite().
-          exclude-checks: hidden_files,github_directory,unexpected_markdown_file,direct_filesystem_operations
+          # Exclude dev-only files that would not be present in a plugin ZIP.
+          exclude-files: .eslintrc.js,.editorconfig,.gitignore,phpunit.xml.dist,phpcs.xml,bin,tests,.github,CLAUDE.md,CHANGELOG.md,composer.json,composer.lock
 
   php-integration:
     name: PHP Integration Tests
