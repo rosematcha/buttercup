@@ -202,7 +202,7 @@ function buttercup_get_request_path()
     }
 
     $request_path = trim($request_path, '/');
-    $home_path = trim(wp_parse_url(home_url(), PHP_URL_PATH), '/');
+    $home_path = trim(wp_parse_url(home_url(), PHP_URL_PATH) ?? '', '/');
     if ($home_path !== '' && strpos($request_path, $home_path) === 0) {
         $request_path = trim(substr($request_path, strlen($home_path)), '/');
     }
@@ -326,7 +326,7 @@ function buttercup_disable_member_canonical($redirect_url, $requested_url)
     }
 
     $request_path = trim($request_path, '/');
-    $home_path = trim(wp_parse_url(home_url(), PHP_URL_PATH), '/');
+    $home_path = trim(wp_parse_url(home_url(), PHP_URL_PATH) ?? '', '/');
     if ($home_path !== '' && strpos($request_path, $home_path) === 0) {
         $request_path = trim(substr($request_path, strlen($home_path)), '/');
     }

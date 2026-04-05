@@ -14,7 +14,7 @@ class Buttercup_Member_Routing_Test extends WP_UnitTestCase
 		parent::set_up();
 
 		$this->original_request_uri = $_SERVER['REQUEST_URI'] ?? '';
-		$this->page_slug = 'team-' . wp_generate_password(8, false, false);
+		$this->page_slug = 'team-' . strtolower(wp_generate_password(8, false, false));
 
 		$this->page_id = self::factory()->post->create([
 			'post_type' => 'page',
