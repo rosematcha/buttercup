@@ -7,14 +7,14 @@ All notable changes to this project will be documented in this file.
 ### Added
 - `readme.txt` for WordPress.org plugin directory compliance
 - Plugin metadata: minimum WP/PHP versions, license
-
-### Added
 - PHPCS (`phpcs.xml`) with WordPress and PHPCompatibilityWP rulesets; `composer lint:php` script
+- `README.md` for GitHub
 - CI jobs for PHPCS and the WordPress Plugin Checker (`wordpress/plugin-check-action`)
 - `/* translators: */` comments on all JS `__()` calls with printf-style placeholders
 
 ### Changed
 - Reformat all PHP to WordPress Coding Standards (tabs, Yoda conditions, K&R braces, `array()`, spaces inside parens, `/** */` doc blocks on all functions)
+- Relicense from MIT/GPL-2.0/ISC to Unlicense (public domain)
 
 ### Fixed
 - Fix test slug case mismatch: force generated page slug to lowercase to match WordPress post_name storage

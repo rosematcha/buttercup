@@ -5,8 +5,8 @@ Requires at least: 5.3
 Tested up to: 6.9
 Requires PHP: 7.2
 Stable tag: 1.0.0
-License: GPLv2 or later
-License URI: https://www.gnu.org/licenses/gpl-2.0.html
+License: Unlicense
+License URI: https://unlicense.org/
 
 Custom Gutenberg blocks and an events system for WordPress.
 

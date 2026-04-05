@@ -6,7 +6,7 @@
  * Version:           1.0.0
  * Author:            Reese Lundquist
  * Author URI:        https://rosematcha.com/
- * License:           GPL-2.0-or-later
+ * License:           Unlicense
  * Text Domain:       buttercup
  * Requires at least: 5.3
  * Requires PHP:      7.2

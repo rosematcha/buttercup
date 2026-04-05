@@ -2,7 +2,7 @@
   "name": "reese/buttercup",
   "description": "Integration test tooling for the Buttercup WordPress plugin",
   "type": "project",
-  "license": "MIT",
+  "license": "Unlicense",
   "require-dev": {
     "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
     "phpcompatibility/phpcompatibility-wp": "*",
