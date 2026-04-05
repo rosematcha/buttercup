@@ -4,7 +4,11 @@
   "type": "project",
   "license": "MIT",
   "require-dev": {
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+    "phpcompatibility/phpcompatibility-wp": "*",
     "phpunit/phpunit": "^9.6",
+    "squizlabs/php_codesniffer": "^3.7",
+    "wp-coding-standards/wpcs": "^3.0",
     "yoast/phpunit-polyfills": "^2.0"
   },
   "scripts": {
@@ -15,6 +19,9 @@
     "sort-packages": true,
     "platform": {
       "php": "8.2"
+    },
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
     }
   }
 }

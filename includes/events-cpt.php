@@ -162,6 +162,7 @@ function buttercup_event_admin_default_sort($query)
     }
 
     // Handle the event_status filter.
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     $event_status = isset($_GET['event_status']) ? sanitize_key($_GET['event_status']) : '';
     if ($event_status === 'upcoming' || $event_status === 'past') {
         $now = current_time('Y-m-d H:i:s');
@@ -186,6 +187,7 @@ function buttercup_event_admin_filter_dropdown()
         return;
     }
 
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     $current = isset($_GET['event_status']) ? sanitize_key($_GET['event_status']) : '';
     ?>
     <select name="event_status">

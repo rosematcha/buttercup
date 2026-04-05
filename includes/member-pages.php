@@ -196,13 +196,13 @@ function buttercup_get_request_path()
         return '';
     }
 
-    $request_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $request_path = wp_parse_url( sanitize_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ), PHP_URL_PATH );
     if (!$request_path) {
         return '';
     }
 
     $request_path = trim($request_path, '/');
-    $home_path = trim(parse_url(home_url(), PHP_URL_PATH), '/');
+    $home_path = trim(wp_parse_url(home_url(), PHP_URL_PATH), '/');
     if ($home_path !== '' && strpos($request_path, $home_path) === 0) {
         $request_path = trim(substr($request_path, strlen($home_path)), '/');
     }
@@ -320,13 +320,13 @@ function buttercup_disable_member_canonical($redirect_url, $requested_url)
         return false;
     }
 
-    $request_path = parse_url($requested_url, PHP_URL_PATH);
+    $request_path = wp_parse_url($requested_url, PHP_URL_PATH);
     if (!$request_path) {
         return $redirect_url;
     }
 
     $request_path = trim($request_path, '/');
-    $home_path = trim(parse_url(home_url(), PHP_URL_PATH), '/');
+    $home_path = trim(wp_parse_url(home_url(), PHP_URL_PATH), '/');
     if ($home_path !== '' && strpos($request_path, $home_path) === 0) {
         $request_path = trim(substr($request_path, strlen($home_path)), '/');
     }
@@ -521,6 +521,7 @@ function buttercup_render_member_page()
 {
     global $post, $wp_query;
     $can_debug = defined('WP_DEBUG') && WP_DEBUG && current_user_can('manage_options');
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Debug flag is a read-only GET param for display, gated by WP_DEBUG and manage_options capability.
     if ($can_debug && isset($_GET['buttercup_debug'])) {
         $request_path = buttercup_get_request_path();
         $match = buttercup_get_member_match_cache($request_path);
@@ -558,7 +559,7 @@ function buttercup_render_member_page()
             'found_member' => $found_member ? ($found_member['member']['name'] ?? '') : '',
         ];
 
-        wp_die('<pre>' . esc_html(print_r($payload, true)) . '</pre>', 'Buttercup Debug');
+        wp_die('<pre>' . esc_html(wp_json_encode($payload, JSON_PRETTY_PRINT)) . '</pre>', 'Buttercup Debug');
     }
 
     $slug = get_query_var('buttercup_member');
@@ -740,15 +741,17 @@ function buttercup_render_member_page()
     get_header();
     echo '<main class="buttercup-team-member-page" style="' . esc_attr($page_style) . '">';
     echo '<div class="buttercup-team-member-page__back">';
+    // translators: %s: the page title the user will navigate back to.
     $back_label = $member_back_label !== '' ? $member_back_label : sprintf(__('Back to %s', 'buttercup'), $post->post_title);
     echo '<a href="' . esc_url(get_permalink($post)) . '">' . esc_html($back_label) . '</a>';
     echo '</div>';
     echo '<div class="buttercup-team-member-page__layout">';
-    echo '<aside class="buttercup-team-member-page__card buttercup-team-member-page--' . esc_attr($image_shape) . $shadow_class . '"';
+    echo '<aside class="buttercup-team-member-page__card buttercup-team-member-page--' . esc_attr($image_shape) . esc_attr($shadow_class) . '"';
     echo ' style="--buttercup-img-size:' . esc_attr($image_size) . 'px; --buttercup-squircle-radius:' . esc_attr($squircle_radius) . '%;">';
     if ($image_url || $image_id) {
         echo '<div class="buttercup-team-member__image-wrap">';
         if ($image_source === 'square-600' && $image_url) {
+            // translators: %s: the team member's name.
             $image_alt = $image_alt !== '' ? $image_alt : sprintf(__('Photo of %s', 'buttercup'), $member_title);
             echo '<img class="buttercup-team-member__image" loading="lazy" decoding="async"';
             echo ' style="object-fit:contain;object-position:center;"';
@@ -770,6 +773,7 @@ function buttercup_render_member_page()
             $final_height = $best ? $best['height'] : 0;
 
             if ($image_alt === '') {
+                // translators: %s: the team member's name.
                 $image_alt = sprintf(__('Photo of %s', 'buttercup'), $member_title);
             }
 
@@ -783,6 +787,7 @@ function buttercup_render_member_page()
             }
             echo ' alt="' . esc_attr($image_alt) . '">';
         } else {
+            // translators: %s: the team member's name.
             echo '<img class="buttercup-team-member__image" loading="lazy" decoding="async" style="object-fit:contain;object-position:center;" src="' . esc_url($image_url) . '" alt="' . esc_attr(sprintf(__('Photo of %s', 'buttercup'), $member_title)) . '">';
         }
         echo '</div>';
@@ -795,17 +800,17 @@ function buttercup_render_member_page()
         echo '<p class="buttercup-team-member__position">' . esc_html($position) . '</p>';
     }
     if ($contact !== '') {
-        echo '<div class="buttercup-team-member-page__contact">' . $contact . '</div>';
+        echo '<div class="buttercup-team-member-page__contact">' . wp_kses_post($contact) . '</div>';
     }
     if ($show_social && $social_html !== '') {
-        echo '<div class="buttercup-team-member-page__social">' . $social_html . '</div>';
+        echo '<div class="buttercup-team-member-page__social">' . wp_kses_post($social_html) . '</div>';
     }
     echo '</aside>';
     echo '<section class="buttercup-team-member-page__bio">';
     if ($member_intro !== '') {
-        echo '<div class="buttercup-team-member-page__intro">' . wpautop(esc_html($member_intro)) . '</div>';
+        echo '<div class="buttercup-team-member-page__intro">' . wp_kses_post(wpautop(esc_html($member_intro))) . '</div>';
     }
-    echo $bio_html !== '' ? $bio_html : '';
+    echo $bio_html !== '' ? wp_kses_post($bio_html) : '';
     echo '</section>';
     echo '</div>';
     echo '</main>';

@@ -10,7 +10,6 @@
  * Text Domain:       buttercup
  * Requires at least: 5.3
  * Requires PHP:      7.2
- * Update URI:        false
  */
 
 if (!defined('ABSPATH')) {

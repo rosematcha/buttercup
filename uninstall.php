@@ -12,7 +12,7 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
 
 /* ── Options ── */
 
-$options = [
+$buttercup_options = [
     // Cache & rewrite.
     'buttercup_cache_version',
     'buttercup_cache_ttl',
@@ -49,8 +49,8 @@ $options = [
     '_buttercup_standalone_slugs',
 ];
 
-foreach ($options as $option) {
-    delete_option($option);
+foreach ($buttercup_options as $buttercup_option) {
+    delete_option($buttercup_option);
 }
 
 /* ── Cron events ── */
@@ -59,21 +59,22 @@ wp_clear_scheduled_hook('buttercup_facebook_sync_events');
 
 /* ── Custom post type data (buttercup_event) ── */
 
-$events = get_posts([
+$buttercup_events = get_posts([
     'post_type'      => 'buttercup_event',
     'post_status'    => 'any',
     'posts_per_page' => -1,
     'fields'         => 'ids',
 ]);
 
-foreach ($events as $event_id) {
-    wp_delete_post($event_id, true);
+foreach ($buttercup_events as $buttercup_event_id) {
+    wp_delete_post($buttercup_event_id, true);
 }
 
 /* ── Transients ── */
 
 global $wpdb;
 
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 $wpdb->query(
     "DELETE FROM {$wpdb->options}
      WHERE option_name LIKE '%\_transient\_buttercup:%'
@@ -84,6 +85,7 @@ $wpdb->query(
 
 /* ── Post meta (home feed images) ── */
 
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 $wpdb->query(
     "DELETE FROM {$wpdb->postmeta}
      WHERE meta_key IN (

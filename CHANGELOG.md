@@ -5,7 +5,20 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- Plugin metadata: minimum WP/PHP versions, license, Update URI
+- `readme.txt` for WordPress.org plugin directory compliance
+- Plugin metadata: minimum WP/PHP versions, license
+
+### Fixed
+- Remove `Update URI` header (not allowed for WordPress.org-hosted plugins)
+- Add output escaping (`esc_html__`, `esc_attr`, `wp_kses_post`, `intval`) across events, member pages, and import wizards
+- Add `wp_unslash()` before sanitization on all `$_POST`/`$_SERVER` superglobal reads
+- Add `isset()` checks on `$_SERVER['REQUEST_METHOD']` accesses
+- Add `// translators:` comments on all `__()` calls with placeholders
+- Replace `parse_url()` with `wp_parse_url()` in member pages
+- Replace `date()` with `wp_date()` in events add-new
+- Replace `print_r()` with `wp_json_encode()` in member pages debug output
+- Prefix template and uninstall global variables with `buttercup_`
+- Add `phpcs:ignore` annotations for intentional nonce-free GET reads and direct DB queries in uninstall
 - `uninstall.php` for clean removal of plugin data
 - Events system: custom post type, archive/single templates, settings page, creation wizard, iCal import
 - Events REST endpoints (`events-status`, `events-sync`) with editor sidebar block

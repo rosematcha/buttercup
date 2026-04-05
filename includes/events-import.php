@@ -27,13 +27,13 @@ function buttercup_events_import_page_render()
     $results    = null;
 
     // Handle form submission.
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buttercup_import_nonce'])) {
-        if (!wp_verify_nonce($_POST['buttercup_import_nonce'], 'buttercup_import_events')) {
-            wp_die(__('Security check failed.', 'buttercup'));
+    if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buttercup_import_nonce'])) {
+        if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['buttercup_import_nonce'])), 'buttercup_import_events')) {
+            wp_die(esc_html__('Security check failed.', 'buttercup'));
         }
 
         if (!current_user_can('manage_options')) {
-            wp_die(__('You do not have permission to import events.', 'buttercup'));
+            wp_die(esc_html__('You do not have permission to import events.', 'buttercup'));
         }
 
         $action = sanitize_key($_POST['import_action'] ?? '');
@@ -166,12 +166,15 @@ function buttercup_handle_ical_import($action)
     $ics_content = '';
 
     if ($action === 'ical_file') {
-        if (empty($_FILES['ical_file']['tmp_name']) || $_FILES['ical_file']['error'] !== UPLOAD_ERR_OK) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified in buttercup_events_import_page_render() before calling this function.
+        if (empty($_FILES['ical_file']['tmp_name']) || !isset($_FILES['ical_file']['error']) || $_FILES['ical_file']['error'] !== UPLOAD_ERR_OK) {
             return ['error' => __('No file uploaded or upload error.', 'buttercup')];
         }
-        $ics_content = file_get_contents($_FILES['ical_file']['tmp_name']);
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- nonce verified in caller; reading local temp file.
+        $ics_content = file_get_contents(sanitize_text_field($_FILES['ical_file']['tmp_name']));
     } elseif ($action === 'ical_url') {
-        $url = esc_url_raw($_POST['ical_url'] ?? '');
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified in buttercup_events_import_page_render() before calling this function.
+        $url = esc_url_raw(wp_unslash($_POST['ical_url'] ?? ''));
         if (!$url) {
             return ['error' => __('Please enter a valid URL.', 'buttercup')];
         }
@@ -181,6 +184,7 @@ function buttercup_handle_ical_import($action)
         }
         $code = wp_remote_retrieve_response_code($response);
         if ($code !== 200) {
+            // translators: %d is the HTTP status code returned by the URL.
             return ['error' => sprintf(__('URL returned HTTP %d.', 'buttercup'), $code)];
         }
         $ics_content = wp_remote_retrieve_body($response);
@@ -200,11 +204,13 @@ function buttercup_handle_ical_import($action)
 
 function buttercup_handle_facebook_html_import()
 {
-    if (empty($_FILES['facebook_html_file']['tmp_name']) || $_FILES['facebook_html_file']['error'] !== UPLOAD_ERR_OK) {
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified in buttercup_events_import_page_render() before calling this function.
+    if (empty($_FILES['facebook_html_file']['tmp_name']) || !isset($_FILES['facebook_html_file']['error']) || $_FILES['facebook_html_file']['error'] !== UPLOAD_ERR_OK) {
         return ['error' => __('No file uploaded or upload error.', 'buttercup')];
     }
 
-    $html = file_get_contents($_FILES['facebook_html_file']['tmp_name']);
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- nonce verified in caller; reading local temp file.
+    $html = file_get_contents(sanitize_text_field($_FILES['facebook_html_file']['tmp_name']));
     if (!$html) {
         return ['error' => __('File is empty.', 'buttercup')];
     }
@@ -433,9 +439,9 @@ function buttercup_render_import_results($results)
     echo sprintf(
         /* translators: 1: imported count, 2: skipped count, 3: failed count */
         esc_html__('%1$d imported, %2$d skipped, %3$d failed', 'buttercup'),
-        $results['imported'],
-        $results['skipped'],
-        $results['failed']
+        intval($results['imported']),
+        intval($results['skipped']),
+        intval($results['failed'])
     );
     echo '</p></div>';
 
@@ -471,7 +477,7 @@ function buttercup_render_import_results($results)
 
             echo '<tr>';
             echo '<td>' . esc_html($detail['title']) . '</td>';
-            echo '<td>' . $badge . '</td>';
+            echo '<td>' . wp_kses_post($badge) . '</td>';
             echo '<td>' . esc_html($detail['reason']) . '</td>';
             echo '</tr>';
         }

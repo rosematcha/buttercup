@@ -674,6 +674,7 @@ function buttercup_homepage_feed_image_warnings($attachment_id, $label, $target_
     $meta = wp_get_attachment_metadata($attachment_id);
 
     if (!$meta || empty($meta['width']) || empty($meta['height'])) {
+        // translators: %s: image label (e.g. "Featured" or "Thumbnail").
         $warnings[] = sprintf(
             __('Could not read dimensions for the %s image.', 'buttercup'),
             $label
@@ -684,6 +685,7 @@ function buttercup_homepage_feed_image_warnings($attachment_id, $label, $target_
     $width = intval($meta['width']);
     $height = intval($meta['height']);
     if ($width < $min_width || $height < $min_height) {
+        // translators: %1$s: image label, %2$d: actual width, %3$d: actual height, %4$d: minimum width, %5$d: minimum height.
         $warnings[] = sprintf(
             __('%1$s image is %2$dx%3$d. Suggested minimum is %4$dx%5$d.', 'buttercup'),
             $label,
@@ -698,6 +700,7 @@ function buttercup_homepage_feed_image_warnings($attachment_id, $label, $target_
     if ($ratio > 0) {
         $diff = abs($ratio - $target_ratio) / $target_ratio;
         if ($diff > 0.07) {
+            // translators: %1$s: image label, %2$s: actual aspect ratio, %3$s: suggested aspect ratio.
             $warnings[] = sprintf(
                 __('%1$s image ratio is about %2$s:1. Suggested ratio is %3$s:1.', 'buttercup'),
                 $label,

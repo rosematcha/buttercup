@@ -59,14 +59,18 @@ function buttercup_tag_showcase_get_current_post_id()
         return intval($post_id);
     }
 
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     if (isset($_GET['post_id'])) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $get_post_id = absint(wp_unslash($_GET['post_id']));
         if ($get_post_id > 0) {
             return $get_post_id;
         }
     }
 
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     if (isset($_GET['post'])) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $get_post = absint(wp_unslash($_GET['post']));
         if ($get_post > 0) {
             return $get_post;
@@ -420,6 +424,7 @@ function buttercup_render_tag_showcase($attributes)
         $html .= '<article class="' . esc_attr(implode(' ', $card_classes)) . '" data-post-id="' . esc_attr($post_id) . '">';
 
         if ($has_link && $attrs['click_mode'] !== 'cta-only') {
+            // translators: %s: post title.
             $overlay_label = sprintf(__('View %s', 'buttercup'), $title);
             $html .= '<a class="buttercup-tag-showcase__card-link" href="' . esc_url($link) . '" aria-label="' . esc_attr($overlay_label) . '"' . $target_attrs . '>';
             $html .= esc_html($overlay_label);

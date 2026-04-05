@@ -27,10 +27,12 @@ function buttercup_redirect_edit_event()
         return;
     }
 
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     if (!isset($_GET['action']) || $_GET['action'] !== 'edit') {
         return;
     }
 
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     $post_id = absint($_GET['post'] ?? 0);
     if (!$post_id) {
         return;
@@ -44,6 +46,7 @@ function buttercup_redirect_edit_event()
         return;
     }
 
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     if (isset($_GET['buttercup_skip_wizard'])) {
         return;
     }
@@ -76,12 +79,12 @@ function buttercup_edit_event_wizard_render()
 {
     $post_id = absint($_GET['post_id'] ?? 0);
     if (!$post_id) {
-        wp_die(__('Missing event ID.', 'buttercup'));
+        wp_die(esc_html__('Missing event ID.', 'buttercup'));
     }
 
     $post = get_post($post_id);
     if (!$post || $post->post_type !== 'buttercup_event') {
-        wp_die(__('Invalid event.', 'buttercup'));
+        wp_die(esc_html__('Invalid event.', 'buttercup'));
     }
 
     // Enqueue media uploader.
@@ -90,23 +93,23 @@ function buttercup_edit_event_wizard_render()
     $error = '';
 
     // Handle form submission.
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buttercup_edit_event_nonce'])) {
-        if (!wp_verify_nonce($_POST['buttercup_edit_event_nonce'], 'buttercup_edit_event')) {
-            wp_die(__('Security check failed.', 'buttercup'));
+    if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buttercup_edit_event_nonce'])) {
+        if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['buttercup_edit_event_nonce'])), 'buttercup_edit_event')) {
+            wp_die(esc_html__('Security check failed.', 'buttercup'));
         }
 
         if (!current_user_can('edit_post', $post_id)) {
-            wp_die(__('You do not have permission to edit this event.', 'buttercup'));
+            wp_die(esc_html__('You do not have permission to edit this event.', 'buttercup'));
         }
 
-        $title = sanitize_text_field($_POST['event_title'] ?? '');
+        $title = sanitize_text_field(wp_unslash($_POST['event_title'] ?? ''));
         if (!$title) {
             $error = __('Please enter an event title.', 'buttercup');
         }
 
         if (!$error) {
-            $start_date = sanitize_text_field($_POST['event_start_date'] ?? '');
-            $content = wp_kses_post($_POST['event_description'] ?? '');
+            $start_date = sanitize_text_field(wp_unslash($_POST['event_start_date'] ?? ''));
+            $content = wp_kses_post(wp_unslash($_POST['event_description'] ?? ''));
 
             wp_update_post([
                 'ID'           => $post_id,
@@ -115,7 +118,7 @@ function buttercup_edit_event_wizard_render()
             ]);
 
             // Start date/time.
-            $start_time = sanitize_text_field($_POST['event_start_time'] ?? '');
+            $start_time = sanitize_text_field(wp_unslash($_POST['event_start_time'] ?? ''));
             $start_allday = !empty($_POST['event_start_allday']);
             $start = buttercup_build_mysql_datetime($start_date, $start_allday ? '' : $start_time);
             update_post_meta($post_id, '_buttercup_event_start', $start);
@@ -124,8 +127,8 @@ function buttercup_edit_event_wizard_render()
             // End date/time.
             $has_end = !empty($_POST['event_has_end']);
             if ($has_end) {
-                $end_date = sanitize_text_field($_POST['event_end_date'] ?? '');
-                $end_time = sanitize_text_field($_POST['event_end_time'] ?? '');
+                $end_date = sanitize_text_field(wp_unslash($_POST['event_end_date'] ?? ''));
+                $end_time = sanitize_text_field(wp_unslash($_POST['event_end_time'] ?? ''));
                 $end_allday = !empty($_POST['event_end_allday']);
                 $end = buttercup_build_mysql_datetime($end_date, $end_allday ? '' : $end_time);
                 update_post_meta($post_id, '_buttercup_event_end', $end);
@@ -136,41 +139,41 @@ function buttercup_edit_event_wizard_render()
             }
 
             // Location.
-            $location = sanitize_text_field($_POST['event_location'] ?? '');
+            $location = sanitize_text_field(wp_unslash($_POST['event_location'] ?? ''));
             update_post_meta($post_id, '_buttercup_event_location', $location);
 
             // URL.
-            $event_url = esc_url_raw($_POST['event_url'] ?? '');
+            $event_url = esc_url_raw(wp_unslash($_POST['event_url'] ?? ''));
             update_post_meta($post_id, '_buttercup_event_url', $event_url);
 
             if ($event_url) {
-                $url_label = sanitize_key($_POST['event_url_label'] ?? 'more_info');
+                $url_label = sanitize_key(wp_unslash($_POST['event_url_label'] ?? 'more_info'));
                 if (in_array($url_label, ['more_info', 'get_tickets', 'register', 'custom'], true)) {
                     update_post_meta($post_id, '_buttercup_event_url_label', $url_label);
                 }
                 if ($url_label === 'custom') {
-                    $custom_label = sanitize_text_field($_POST['event_url_label_custom'] ?? '');
+                    $custom_label = sanitize_text_field(wp_unslash($_POST['event_url_label_custom'] ?? ''));
                     update_post_meta($post_id, '_buttercup_event_url_label_custom', $custom_label);
                 }
             }
 
             // Page mode.
-            $page_mode = sanitize_key($_POST['event_page_mode'] ?? 'template');
+            $page_mode = sanitize_key(wp_unslash($_POST['event_page_mode'] ?? 'template'));
             if (in_array($page_mode, ['template', 'editor', 'standalone'], true)) {
                 update_post_meta($post_id, '_buttercup_event_page_mode', $page_mode);
             }
             if ($page_mode === 'standalone') {
-                $linked_page = absint($_POST['event_linked_page'] ?? 0);
+                $linked_page = absint(wp_unslash($_POST['event_linked_page'] ?? 0));
                 if ($linked_page) {
                     update_post_meta($post_id, '_buttercup_event_linked_page', $linked_page);
                 } else {
-                    $custom_slug = sanitize_title($_POST['event_custom_slug'] ?? '');
+                    $custom_slug = sanitize_title(wp_unslash($_POST['event_custom_slug'] ?? ''));
                     update_post_meta($post_id, '_buttercup_event_custom_slug', $custom_slug);
                 }
             }
 
             // Featured image (cover).
-            $cover_id = absint($_POST['event_cover_image_id'] ?? 0);
+            $cover_id = absint(wp_unslash($_POST['event_cover_image_id'] ?? 0));
             if ($cover_id) {
                 set_post_thumbnail($post_id, $cover_id);
             } else {
@@ -178,13 +181,13 @@ function buttercup_edit_event_wizard_render()
             }
 
             // Homepage column images.
-            $mobile_id  = absint($_POST['event_homepage_mobile_id'] ?? 0);
-            $desktop_id = absint($_POST['event_homepage_desktop_id'] ?? 0);
+            $mobile_id  = absint(wp_unslash($_POST['event_homepage_mobile_id'] ?? 0));
+            $desktop_id = absint(wp_unslash($_POST['event_homepage_desktop_id'] ?? 0));
             update_post_meta($post_id, 'buttercup_home_mobile_image_id', $mobile_id ?: '');
             update_post_meta($post_id, 'buttercup_home_desktop_image_id', $desktop_id ?: '');
 
             // Submit action.
-            $action = sanitize_key($_POST['_buttercup_submit_action'] ?? 'update');
+            $action = sanitize_key(wp_unslash($_POST['_buttercup_submit_action'] ?? 'update'));
             if ($action === 'publish') {
                 wp_publish_post($post_id);
             } elseif ($action === 'draft') {
@@ -263,11 +266,12 @@ function buttercup_edit_event_wizard_page($post_id, $error = '')
 
         <div class="buttercup-wizard__status-bar">
             <span class="buttercup-wizard__status-label"><?php esc_html_e('Status:', 'buttercup'); ?></span>
-            <span class="buttercup-wizard__status-value buttercup-wizard__status-value--<?php echo $status_class; ?>">
+            <span class="buttercup-wizard__status-value buttercup-wizard__status-value--<?php echo esc_attr($status_class); ?>">
                 <?php echo esc_html($status_label); ?>
             </span>
         </div>
 
+        <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
         <?php if (!empty($_GET['updated'])) : ?>
             <div class="notice notice-success is-dismissible"><p><?php esc_html_e('Event updated.', 'buttercup'); ?></p></div>
         <?php endif; ?>
@@ -381,7 +385,7 @@ function buttercup_edit_event_wizard_page($post_id, $error = '')
                         foreach ($pages as $page) {
                             printf(
                                 '<option value="%d"%s>%s</option>',
-                                $page->ID,
+                                esc_attr($page->ID),
                                 selected($linked_page, $page->ID, false),
                                 esc_html($page->post_title)
                             );

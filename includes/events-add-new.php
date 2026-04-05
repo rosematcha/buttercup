@@ -14,6 +14,7 @@ function buttercup_linked_event_created_notice()
         return;
     }
 
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     $created_id = absint($_GET['buttercup_created'] ?? 0);
     if (!$created_id) {
         return;
@@ -46,11 +47,13 @@ function buttercup_redirect_add_new_event()
         return;
     }
 
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     if (!isset($_GET['post_type']) || $_GET['post_type'] !== 'buttercup_event') {
         return;
     }
 
     // Don't redirect if coming back from the wizard (flag set).
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     if (isset($_GET['buttercup_skip_wizard'])) {
         return;
     }
@@ -88,16 +91,16 @@ function buttercup_add_event_wizard_render()
     $success = '';
 
     // Handle form submission.
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buttercup_add_event_nonce'])) {
-        if (!wp_verify_nonce($_POST['buttercup_add_event_nonce'], 'buttercup_add_event')) {
-            wp_die(__('Security check failed.', 'buttercup'));
+    if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buttercup_add_event_nonce'])) {
+        if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['buttercup_add_event_nonce'])), 'buttercup_add_event')) {
+            wp_die(esc_html__('Security check failed.', 'buttercup'));
         }
 
         if (!current_user_can('edit_posts')) {
-            wp_die(__('You do not have permission to create events.', 'buttercup'));
+            wp_die(esc_html__('You do not have permission to create events.', 'buttercup'));
         }
 
-        $mode = sanitize_key($_POST['buttercup_event_mode'] ?? 'manual');
+        $mode = sanitize_key(wp_unslash($_POST['buttercup_event_mode'] ?? 'manual'));
 
         if ($mode === 'ical') {
             $result = buttercup_wizard_handle_ical();
@@ -132,13 +135,15 @@ function buttercup_add_event_wizard_render()
  */
 function buttercup_wizard_handle_manual()
 {
-    $title = sanitize_text_field($_POST['event_title'] ?? '');
+    // Nonce verified in buttercup_add_event_wizard_render() before this function is called.
+    // phpcs:disable WordPress.Security.NonceVerification.Missing
+    $title = sanitize_text_field(wp_unslash($_POST['event_title'] ?? ''));
     if (!$title) {
         return new WP_Error('missing_title', __('Please enter an event title.', 'buttercup'));
     }
 
-    $start_date = sanitize_text_field($_POST['event_start_date'] ?? '');
-    $start_time = sanitize_text_field($_POST['event_start_time'] ?? '');
+    $start_date = sanitize_text_field(wp_unslash($_POST['event_start_date'] ?? ''));
+    $start_time = sanitize_text_field(wp_unslash($_POST['event_start_time'] ?? ''));
     $start_allday = !empty($_POST['event_start_allday']);
     $start = buttercup_build_mysql_datetime($start_date, $start_allday ? '' : $start_time);
 
@@ -146,17 +151,17 @@ function buttercup_wizard_handle_manual()
     $end = '';
     $end_allday = false;
     if ($has_end) {
-        $end_date = sanitize_text_field($_POST['event_end_date'] ?? '');
-        $end_time = sanitize_text_field($_POST['event_end_time'] ?? '');
+        $end_date = sanitize_text_field(wp_unslash($_POST['event_end_date'] ?? ''));
+        $end_time = sanitize_text_field(wp_unslash($_POST['event_end_time'] ?? ''));
         $end_allday = !empty($_POST['event_end_allday']);
         $end = buttercup_build_mysql_datetime($end_date, $end_allday ? '' : $end_time);
     }
 
-    $location  = sanitize_text_field($_POST['event_location'] ?? '');
-    $event_url = esc_url_raw($_POST['event_url'] ?? '');
-    $content   = wp_kses_post($_POST['event_description'] ?? '');
+    $location  = sanitize_text_field(wp_unslash($_POST['event_location'] ?? ''));
+    $event_url = esc_url_raw(wp_unslash($_POST['event_url'] ?? ''));
+    $content   = wp_kses_post(wp_unslash($_POST['event_description'] ?? ''));
 
-    $submit_action = sanitize_key($_POST['_buttercup_submit_action'] ?? 'draft');
+    $submit_action = sanitize_key(wp_unslash($_POST['_buttercup_submit_action'] ?? 'draft'));
     $post_status = ($submit_action === 'publish') ? 'publish' : 'draft';
 
     $post_id = wp_insert_post([
@@ -189,12 +194,12 @@ function buttercup_wizard_handle_manual()
     if ($event_url) {
         update_post_meta($post_id, '_buttercup_event_url', $event_url);
 
-        $url_label = sanitize_key($_POST['event_url_label'] ?? 'more_info');
+        $url_label = sanitize_key(wp_unslash($_POST['event_url_label'] ?? 'more_info'));
         if (in_array($url_label, ['more_info', 'get_tickets', 'register', 'custom'], true)) {
             update_post_meta($post_id, '_buttercup_event_url_label', $url_label);
         }
         if ($url_label === 'custom') {
-            $custom_label = sanitize_text_field($_POST['event_url_label_custom'] ?? '');
+            $custom_label = sanitize_text_field(wp_unslash($_POST['event_url_label_custom'] ?? ''));
             if ($custom_label) {
                 update_post_meta($post_id, '_buttercup_event_url_label_custom', $custom_label);
             }
@@ -202,19 +207,19 @@ function buttercup_wizard_handle_manual()
     }
 
     // Page mode.
-    $page_mode = sanitize_key($_POST['event_page_mode'] ?? 'template');
+    $page_mode = sanitize_key(wp_unslash($_POST['event_page_mode'] ?? 'template'));
     if (in_array($page_mode, ['editor', 'standalone'], true)) {
         update_post_meta($post_id, '_buttercup_event_page_mode', $page_mode);
     }
     if ($page_mode === 'standalone') {
-        $linked_page = absint($_POST['event_linked_page'] ?? 0);
+        $linked_page = absint(wp_unslash($_POST['event_linked_page'] ?? 0));
         if ($linked_page) {
             update_post_meta($post_id, '_buttercup_event_linked_page', $linked_page);
             // Auto-publish — the real content lives on the linked page,
             // so there's nothing for the user to edit here.
             wp_publish_post($post_id);
         } else {
-            $custom_slug = sanitize_title($_POST['event_custom_slug'] ?? '');
+            $custom_slug = sanitize_title(wp_unslash($_POST['event_custom_slug'] ?? ''));
             if ($custom_slug) {
                 update_post_meta($post_id, '_buttercup_event_custom_slug', $custom_slug);
             }
@@ -222,15 +227,15 @@ function buttercup_wizard_handle_manual()
     }
 
     // Featured image (cover).
-    $cover_id = absint($_POST['event_cover_image_id'] ?? 0);
+    $cover_id = absint(wp_unslash($_POST['event_cover_image_id'] ?? 0));
     if ($cover_id) {
         set_post_thumbnail($post_id, $cover_id);
     }
 
     // Homepage column images.
     if (!empty($_POST['event_homepage_enabled'])) {
-        $mobile_id  = absint($_POST['event_homepage_mobile_id'] ?? 0);
-        $desktop_id = absint($_POST['event_homepage_desktop_id'] ?? 0);
+        $mobile_id  = absint(wp_unslash($_POST['event_homepage_mobile_id'] ?? 0));
+        $desktop_id = absint(wp_unslash($_POST['event_homepage_desktop_id'] ?? 0));
 
         if ($mobile_id) {
             update_post_meta($post_id, 'buttercup_home_mobile_image_id', $mobile_id);
@@ -241,6 +246,7 @@ function buttercup_wizard_handle_manual()
     }
 
     buttercup_bump_cache_version();
+    // phpcs:enable WordPress.Security.NonceVerification.Missing
 
     return $post_id;
 }
@@ -252,12 +258,14 @@ function buttercup_wizard_handle_manual()
  */
 function buttercup_wizard_handle_ical()
 {
+    // Nonce verified in buttercup_add_event_wizard_render() before this function is called.
+    // phpcs:disable WordPress.Security.NonceVerification.Missing
     $ics_content = '';
 
-    if (!empty($_FILES['ical_file']['tmp_name']) && $_FILES['ical_file']['error'] === UPLOAD_ERR_OK) {
-        $ics_content = file_get_contents($_FILES['ical_file']['tmp_name']);
+    if (isset($_FILES['ical_file']) && !empty($_FILES['ical_file']['tmp_name']) && isset($_FILES['ical_file']['error']) && $_FILES['ical_file']['error'] === UPLOAD_ERR_OK) {
+        $ics_content = file_get_contents(sanitize_text_field($_FILES['ical_file']['tmp_name'])); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
     } elseif (!empty($_POST['ical_url'])) {
-        $url = esc_url_raw($_POST['ical_url']);
+        $url = esc_url_raw(wp_unslash($_POST['ical_url']));
         if (!$url) {
             return new WP_Error('invalid_url', __('Please enter a valid URL.', 'buttercup'));
         }
@@ -327,6 +335,7 @@ function buttercup_wizard_handle_ical()
     }
 
     buttercup_bump_cache_version();
+    // phpcs:enable WordPress.Security.NonceVerification.Missing
 
     return $post_id;
 }
@@ -386,7 +395,7 @@ function buttercup_add_event_wizard_page($error = '')
 
                 <?php
                 // Smart default: next Saturday.
-                $next_saturday = date('Y-m-d', strtotime('next Saturday'));
+                $next_saturday = wp_date('Y-m-d', strtotime('next Saturday'));
                 ?>
                 <div class="buttercup-wizard__field-row">
                     <div class="buttercup-wizard__field buttercup-wizard__field--half">
@@ -508,8 +517,8 @@ function buttercup_add_event_wizard_page($error = '')
                         $pages = get_pages(['post_status' => 'publish', 'sort_column' => 'post_title']);
                         foreach ($pages as $page) {
                             printf(
-                                '<option value="%d">%s</option>',
-                                $page->ID,
+                                '<option value="%s">%s</option>',
+                                esc_attr($page->ID),
                                 esc_html($page->post_title)
                             );
                         }

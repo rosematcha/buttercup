@@ -347,6 +347,7 @@ function buttercup_fb_field_interval_render()
     echo '<select name="buttercup_fb_sync_interval">';
     foreach ($options as $seconds => $label) {
         $selected = selected($value, $seconds, false);
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- selected() is a safe core function
         echo '<option value="' . esc_attr($seconds) . '"' . $selected . '>' . esc_html($label) . '</option>';
     }
     echo '</select>';

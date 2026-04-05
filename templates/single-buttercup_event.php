@@ -13,32 +13,32 @@ get_header();
 while (have_posts()) :
     the_post();
 
-    $event_meta = buttercup_get_event_meta(get_the_ID());
-    $start_ts   = $event_meta['start'] ? buttercup_event_timestamp($event_meta['start']) : 0;
-    $end_ts     = $event_meta['end'] ? buttercup_event_timestamp($event_meta['end']) : 0;
-    $time_format = get_option('time_format', 'g:i a');
+    $buttercup_event_meta = buttercup_get_event_meta(get_the_ID());
+    $buttercup_start_ts   = $buttercup_event_meta['start'] ? buttercup_event_timestamp($buttercup_event_meta['start']) : 0;
+    $buttercup_end_ts     = $buttercup_event_meta['end'] ? buttercup_event_timestamp($buttercup_event_meta['end']) : 0;
+    $buttercup_time_format = get_option('time_format', 'g:i a');
 
     // Format display values.
-    $date_range  = buttercup_format_event_date_range($event_meta['start'], $event_meta['end'], $event_meta['start_allday'], $event_meta['end_allday']);
+    $buttercup_date_range  = buttercup_format_event_date_range($buttercup_event_meta['start'], $buttercup_event_meta['end'], $buttercup_event_meta['start_allday'], $buttercup_event_meta['end_allday']);
 
     // For the details box, separate date and time.
-    $detail_date = $start_ts ? wp_date('F j', $start_ts) : '';
-    $detail_time = '';
-    if ($start_ts && !$event_meta['start_allday']) {
-        $detail_time = wp_date($time_format, $start_ts);
-        if ($end_ts && !$event_meta['end_allday']) {
-            $detail_time .= ' - ' . wp_date($time_format, $end_ts);
+    $buttercup_detail_date = $buttercup_start_ts ? wp_date('F j', $buttercup_start_ts) : '';
+    $buttercup_detail_time = '';
+    if ($buttercup_start_ts && !$buttercup_event_meta['start_allday']) {
+        $buttercup_detail_time = wp_date($buttercup_time_format, $buttercup_start_ts);
+        if ($buttercup_end_ts && !$buttercup_event_meta['end_allday']) {
+            $buttercup_detail_time .= ' - ' . wp_date($buttercup_time_format, $buttercup_end_ts);
         }
     }
 
     // Check if meta box has any content to show.
-    $has_details = $detail_date || $detail_time || !empty($event_meta['url']);
-    $has_venue   = !empty($event_meta['location']);
-    $show_meta_box = $has_details || $has_venue;
+    $buttercup_has_details = $buttercup_detail_date || $buttercup_detail_time || !empty($buttercup_event_meta['url']);
+    $buttercup_has_venue   = !empty($buttercup_event_meta['location']);
+    $buttercup_show_meta_box = $buttercup_has_details || $buttercup_has_venue;
 
     // Navigation: previous/next events by event start date.
-    $prev_event = buttercup_get_adjacent_event(get_the_ID(), 'previous');
-    $next_event = buttercup_get_adjacent_event(get_the_ID(), 'next');
+    $buttercup_prev_event = buttercup_get_adjacent_event(get_the_ID(), 'previous');
+    $buttercup_next_event = buttercup_get_adjacent_event(get_the_ID(), 'next');
 ?>
 
 <div class="buttercup-single-event">
@@ -55,8 +55,8 @@ while (have_posts()) :
             <header class="buttercup-single-event__header">
                 <h1 class="buttercup-single-event__title"><?php the_title(); ?></h1>
 
-                <?php if ($date_range) : ?>
-                    <div class="buttercup-single-event__date"><?php echo esc_html($date_range); ?></div>
+                <?php if ($buttercup_date_range) : ?>
+                    <div class="buttercup-single-event__date"><?php echo esc_html($buttercup_date_range); ?></div>
                 <?php endif; ?>
             </header>
 
@@ -70,46 +70,46 @@ while (have_posts()) :
                 <?php the_content(); ?>
             </div>
 
-            <?php if (!empty($event_meta['url'])) : ?>
+            <?php if (!empty($buttercup_event_meta['url'])) : ?>
                 <div class="buttercup-single-event__cta">
-                    <a href="<?php echo esc_url($event_meta['url']); ?>" target="_blank" rel="noopener noreferrer" class="buttercup-single-event__cta-button">
-                        <?php echo esc_html($event_meta['url_label']); ?> &rarr;
+                    <a href="<?php echo esc_url($buttercup_event_meta['url']); ?>" target="_blank" rel="noopener noreferrer" class="buttercup-single-event__cta-button">
+                        <?php echo esc_html($buttercup_event_meta['url_label']); ?> &rarr;
                     </a>
                 </div>
             <?php endif; ?>
 
-            <?php if ($show_meta_box) : ?>
+            <?php if ($buttercup_show_meta_box) : ?>
                 <div class="buttercup-single-event__meta-box">
-                    <?php if ($has_details) : ?>
+                    <?php if ($buttercup_has_details) : ?>
                         <div class="buttercup-single-event__details">
                             <h4 class="buttercup-single-event__meta-heading"><?php esc_html_e('DETAILS', 'buttercup'); ?></h4>
                             <dl class="buttercup-single-event__detail-list">
-                                <?php if ($detail_date) : ?>
+                                <?php if ($buttercup_detail_date) : ?>
                                     <dt><?php esc_html_e('Date:', 'buttercup'); ?></dt>
-                                    <dd><?php echo esc_html($detail_date); ?></dd>
+                                    <dd><?php echo esc_html($buttercup_detail_date); ?></dd>
                                 <?php endif; ?>
 
-                                <?php if ($detail_time) : ?>
+                                <?php if ($buttercup_detail_time) : ?>
                                     <dt><?php esc_html_e('Time:', 'buttercup'); ?></dt>
-                                    <dd><?php echo esc_html($detail_time); ?></dd>
+                                    <dd><?php echo esc_html($buttercup_detail_time); ?></dd>
                                 <?php endif; ?>
 
-                                <?php if (!empty($event_meta['url'])) : ?>
+                                <?php if (!empty($buttercup_event_meta['url'])) : ?>
                                     <dt><?php esc_html_e('Website:', 'buttercup'); ?></dt>
-                                    <dd><a href="<?php echo esc_url($event_meta['url']); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($event_meta['url']); ?></a></dd>
+                                    <dd><a href="<?php echo esc_url($buttercup_event_meta['url']); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($buttercup_event_meta['url']); ?></a></dd>
                                 <?php endif; ?>
                             </dl>
                         </div>
                     <?php endif; ?>
 
-                    <?php if ($has_venue) : ?>
+                    <?php if ($buttercup_has_venue) : ?>
                         <div class="buttercup-single-event__venue">
                             <h4 class="buttercup-single-event__meta-heading"><?php esc_html_e('VENUE', 'buttercup'); ?></h4>
-                            <p class="buttercup-single-event__venue-address"><?php echo esc_html($event_meta['location']); ?></p>
+                            <p class="buttercup-single-event__venue-address"><?php echo esc_html($buttercup_event_meta['location']); ?></p>
                             <?php
-                            $maps_query = urlencode($event_meta['location']);
+                            $buttercup_maps_query = rawurlencode($buttercup_event_meta['location']);
                             ?>
-                            <a href="<?php echo esc_url("https://www.google.com/maps/search/?api=1&query={$maps_query}"); ?>" target="_blank" rel="noopener noreferrer" class="buttercup-single-event__maps-link">
+                            <a href="<?php echo esc_url("https://www.google.com/maps/search/?api=1&query={$buttercup_maps_query}"); ?>" target="_blank" rel="noopener noreferrer" class="buttercup-single-event__maps-link">
                                 + <?php esc_html_e('Google Map', 'buttercup'); ?>
                             </a>
                         </div>
@@ -119,19 +119,19 @@ while (have_posts()) :
 
         </article>
 
-        <?php if ($prev_event || $next_event) : ?>
+        <?php if ($buttercup_prev_event || $buttercup_next_event) : ?>
             <nav class="buttercup-single-event__nav" aria-label="<?php esc_attr_e('Event navigation', 'buttercup'); ?>">
                 <div class="buttercup-single-event__nav-prev">
-                    <?php if ($prev_event) : ?>
-                        <a href="<?php echo esc_url(get_permalink($prev_event)); ?>">
-                            <span aria-hidden="true">&lsaquo;</span> <?php echo esc_html(get_the_title($prev_event)); ?>
+                    <?php if ($buttercup_prev_event) : ?>
+                        <a href="<?php echo esc_url(get_permalink($buttercup_prev_event)); ?>">
+                            <span aria-hidden="true">&lsaquo;</span> <?php echo esc_html(get_the_title($buttercup_prev_event)); ?>
                         </a>
                     <?php endif; ?>
                 </div>
                 <div class="buttercup-single-event__nav-next">
-                    <?php if ($next_event) : ?>
-                        <a href="<?php echo esc_url(get_permalink($next_event)); ?>">
-                            <?php echo esc_html(get_the_title($next_event)); ?> <span aria-hidden="true">&rsaquo;</span>
+                    <?php if ($buttercup_next_event) : ?>
+                        <a href="<?php echo esc_url(get_permalink($buttercup_next_event)); ?>">
+                            <?php echo esc_html(get_the_title($buttercup_next_event)); ?> <span aria-hidden="true">&rsaquo;</span>
                         </a>
                     <?php endif; ?>
                 </div>

@@ -70,7 +70,7 @@ function buttercup_facebook_sync_run()
         return ['synced' => 0, 'errors' => [$msg]];
     }
 
-    $url = 'https://graph.facebook.com/v19.0/' . urlencode($page) . '/events';
+    $url = 'https://graph.facebook.com/v19.0/' . rawurlencode($page) . '/events';
     $url = add_query_arg([
         'fields' => 'id,name,description,start_time,end_time,place,cover',
         'limit'  => 100,
