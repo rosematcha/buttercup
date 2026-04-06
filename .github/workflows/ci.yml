@@ -90,19 +90,33 @@ jobs:
             .github
             bin
             docs
+            node_modules
+            src
             tests
+            vendor
           exclude-files: |
             .editorconfig
             .eslintrc.js
             .gitignore
             CHANGELOG.md
             CLAUDE.md
+            README.md
             composer.json
             composer.lock
             package.json
             package-lock.json
             phpcs.xml
             phpunit.xml.dist
+            build/events/index.asset.php
+            build/events-meta/index.asset.php
+            build/homepage-feed/index.asset.php
+            build/row-column/index.asset.php
+            build/row-layout/index.asset.php
+            build/tag-showcase/index.asset.php
+            build/team/index.asset.php
+            build/team/view.asset.php
+            build/team-member/index.asset.php
+            build/team-member/view.asset.php
 
   php-integration:
     name: PHP Integration Tests
